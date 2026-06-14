@@ -86,10 +86,10 @@ export default function Inicio() {
         <div className="flex justify-between items-start">
           {[
             { icon: '📋', label: 'Nuevo\nPresupuesto', bg: '#1A3A6B', to: '/presupuestos/nuevo' },
-            { icon: '💬', label: 'Enviar por\nWhatsApp',  bg: '#1A4D2E', to: null },
-            { icon: '📅', label: 'Agenda\nde hoy',       bg: '#3D1A7A', to: '/agenda' },
-            { icon: '🧾', label: 'Gastos\nrápidos',      bg: '#6B3A1A', to: null },
-            { icon: '⏱',  label: 'Registrar\nhoras',     bg: '#1A4A4A', to: null },
+            { icon: '👥', label: 'Clientes',            bg: '#1A4D2E', to: '/clientes' },
+            { icon: '📅', label: 'Agenda\nde hoy',      bg: '#3D1A7A', to: '/agenda' },
+            { icon: '🧾', label: 'Gastos\nrápidos',     bg: '#6B3A1A', to: '/registro?tipo=gasto' },
+            { icon: '⏱',  label: 'Registrar\nhoras',    bg: '#1A4A4A', to: '/registro?tipo=horas' },
           ].map(a => (
             <button key={a.label} onClick={() => a.to && navigate(a.to)}
               className="flex flex-col items-center gap-2 flex-1">
