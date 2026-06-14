@@ -6,9 +6,9 @@ const CREAR = [
   { emoji: '📋', label: 'Nuevo presupuesto',  desc: 'Desde cero',              bg: '#1A3A6B', to: '/presupuestos/nuevo' },
   { emoji: '🏗',  label: 'Nueva obra',         desc: 'Sin presupuesto previo',  bg: '#2A1A0A', to: '/obras/nueva' },
   { emoji: '📅', label: 'Agenda visita',       desc: 'Con cliente',             bg: '#2A1A3A', to: '/agenda' },
-  { emoji: '🛒', label: 'Gasto de obra',       desc: 'Registrar gasto',         bg: '#2A1A0A', to: '/obras' },
-  { emoji: '💰', label: 'Pago recibido',       desc: 'De un cliente',           bg: '#0A2A1A', to: '/presupuestos' },
-  { emoji: '⏱',  label: 'Horas trabajadas',   desc: 'Tiempo de trabajo',       bg: '#0A2A2A', to: '/obras' },
+  { emoji: '🛒', label: 'Gasto de obra',       desc: 'Registrar gasto',         bg: '#2A1A0A', to: '/registro?tipo=gasto' },
+  { emoji: '💰', label: 'Pago recibido',       desc: 'De un cliente',           bg: '#0A2A1A', to: '/registro?tipo=pago' },
+  { emoji: '⏱',  label: 'Horas trabajadas',   desc: 'Tiempo de trabajo',       bg: '#0A2A2A', to: '/registro?tipo=horas' },
 ]
 
 export default function CreateModal({ onClose }) {
