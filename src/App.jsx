@@ -42,18 +42,11 @@ export default function App() {
 
   if (loading || (user && checkingAcceso)) return <Splash />
 
-  // El admin siempre tiene acceso
-  const esAdmin = user?.email === 'cristianduly@gmail.com'
+  const tieneAcceso = !user ? false : suscripcion?.tiene_acceso === true
 
-  // Determinar si tiene acceso
-  const tieneAcceso = !user ? false
-    : esAdmin ? true
-    : suscripcion?.tiene_acceso === true
-
-  // Estado de la suscripción para mostrar advertencias
-  const estadoSus  = suscripcion?.estado || null
+  const estadoSus     = suscripcion?.estado || null
   const diasRestantes = suscripcion?.dias_restantes ?? null
-  const planRaw = esAdmin ? 'sincargo' : (suscripcion?.plan || 'basico')
+  const planRaw = suscripcion?.plan || 'basico'
   const plan    = planRaw === 'sincargo' ? 'profesional' : planRaw
 
   return (
