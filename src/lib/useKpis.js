@@ -1,0 +1,55 @@
+import { useState, useEffect } from 'react'
+import { supabase } from './supabase'
+
+export function useKpis() {
+  const [kpis, setKpis] = useState({ facturado: 0, cobrado: 0, pendiente: 0, ganancia: 0, obrasActivas: 0 })
+  const [agenda, setAgenda] = useState([])
+  const [obraDestacada, setObraDestacada] = useState(null)
+  const [embudo, setEmbudo] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { cargar() }, [])
+
+  async function cargar() {
+    setLoading(true)
+    const hoy = new Date().toISOString().split('T')[0]
+    const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+
+    const [{ data: presups }, { data: obras }, { data: visitas }] = await Promise.all([
+      supabase.from('presupuestos').select('total, status, created_at').gte('created_at', inicioMes),
+      supabase.from('obras_resumen').select('*'),
+      supabase.from('visitas').select('*, clientes(nombre, telefono)').eq('fecha', hoy).order('hora'),
+    ])
+
+    const facturado = (presups || []).reduce((s, p) => s + (p.total || 0), 0)
+    const obrasList = obras || []
+    const cobrado = obrasList.reduce((s, o) => s + (o.cobrado || 0), 0)
+    const pendiente = obrasList.reduce((s, o) => s + (o.pendiente || 0), 0)
+    const gastosTotales = obrasList.reduce((s, o) => s + (o.gastos || 0), 0)
+    const ganancia = cobrado - gastosTotales
+
+    // embudo
+    const statusList = ['borrador', 'enviado', 'aprobado', 'en_ejecucion', 'cobrada']
+    const embudoData = [
+      { label: 'Enviados',      status: 'enviado',      color: '#3B82F6' },
+      { label: 'Aprobados',     status: 'aprobado',     color: '#22C55E' },
+      { label: 'En ejecución',  status: 'en_ejecucion', color: '#F97316' },
+      { label: 'Pend. cobro',   status: 'pendiente_cobro', color: '#A855F7' },
+      { label: 'Cobrados',      status: 'cobrada',      color: '#14B8A6' },
+    ].map(e => ({
+      ...e,
+      count: obrasList.filter(o => o.status === e.status).length,
+      monto: obrasList.filter(o => o.status === e.status).reduce((s, o) => s + o.total, 0),
+    }))
+
+    const destacada = obrasList.find(o => o.status === 'en_ejecucion') || null
+
+    setKpis({ facturado, cobrado, pendiente, ganancia, obrasActivas: obrasList.filter(o => o.status === 'en_ejecucion').length })
+    setAgenda(visitas || [])
+    setEmbudo(embudoData)
+    setObraDestacada(destacada)
+    setLoading(false)
+  }
+
+  return { kpis, agenda, embudo, obraDestacada, loading, cargar }
+}
