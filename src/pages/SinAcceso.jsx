@@ -1,8 +1,12 @@
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-const PLANES = [
+const CENTRAL_URL = 'https://ngymvfvlknaltsvsrvjm.supabase.co'
+const CENTRAL_KEY = 'sb_publishable_CJQPQElcEzA9CACfuNllYg_Pe9lwvXy'
+
+const PLANES_BASE = [
   {
-    key: 'basico', label: 'Básico', precio: '$8.000', periodo: '/mes', color: '#6B7280',
+    key: 'basico', label: 'Básico', precio: null, periodo: '/mes', color: '#6B7280',
     features: [
       { ok: true,  icon: '📋', texto: 'Hasta 10 presupuestos por mes' },
       { ok: true,  icon: '🏗',  texto: 'Obras ilimitadas' },
@@ -18,7 +22,7 @@ const PLANES = [
     ],
   },
   {
-    key: 'profesional', label: 'Profesional', precio: '$15.000', periodo: '/mes', color: '#3B82F6', destacado: true,
+    key: 'profesional', label: 'Profesional', precio: null, periodo: '/mes', color: '#3B82F6', destacado: true,
     features: [
       { ok: true,  icon: '📋', texto: 'Presupuestos ilimitados' },
       { ok: true,  icon: '🏗',  texto: 'Obras ilimitadas' },
@@ -34,7 +38,7 @@ const PLANES = [
     ],
   },
   {
-    key: 'premium', label: 'Premium', precio: '$25.000', periodo: '/mes', color: '#A855F7',
+    key: 'premium', label: 'Premium', precio: null, periodo: '/mes', color: '#A855F7',
     features: [
       { ok: true, icon: '📋', texto: 'Presupuestos ilimitados' },
       { ok: true, icon: '🏗',  texto: 'Obras ilimitadas' },
@@ -52,6 +56,31 @@ const PLANES = [
 ]
 
 export default function SinAcceso({ estado, diasRestantes, email }) {
+  const [precios, setPrecios] = useState({})
+
+  useEffect(() => {
+    fetch(`${CENTRAL_URL}/rest/v1/planes_precios?app_id=eq.app-presup&select=plan,precio_mensual`, {
+      headers: { 'apikey': CENTRAL_KEY, 'Authorization': `Bearer ${CENTRAL_KEY}` }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const map = {}
+          data.forEach(p => { map[p.plan] = p.precio_mensual })
+          setPrecios(map)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Merge precios del SaaS sobre PLANES_BASE
+  const PLANES = PLANES_BASE.map(p => ({
+    ...p,
+    precio: precios[p.key] != null
+      ? '$' + Number(precios[p.key]).toLocaleString('es-AR')
+      : '...',
+  }))
+
   const esDemo    = estado === 'demo'
   const esImpago  = estado === 'impago'
   const esSuspend = estado === 'suspendido'
