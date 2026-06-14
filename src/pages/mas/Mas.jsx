@@ -6,10 +6,10 @@ const TILES = [
   { icon: BarChart2,      label: 'Estadísticas',  color: 'bg-blue-600',   to: '/estadisticas' },
   { icon: Users,          label: 'Clientes',      color: 'bg-teal-600',   to: '/clientes' },
   { icon: LayoutTemplate, label: 'Plantillas',    color: 'bg-orange-600', to: '/plantillas' },
-  { icon: Camera,         label: 'Trabajos',      color: 'bg-purple-600', to: '/trabajos' },
-  { icon: Sparkles,       label: 'IA',            color: 'bg-violet-600', to: '/ia', badge: 'NUEVO' },
-  { icon: Users2,         label: 'Equipo',        color: 'bg-cyan-700',   to: '/equipo' },
-  { icon: CreditCard,     label: 'Suscripción',   color: 'bg-yellow-600', to: '/suscripcion' },
+  { icon: Camera,         label: 'Trabajos',      color: 'bg-purple-600', to: '/obras', badge: null },
+  { icon: Sparkles,       label: 'IA',            color: 'bg-violet-600', to: null, badge: 'PRONTO' },
+  { icon: Users2,         label: 'Equipo',        color: 'bg-cyan-700',   to: null, badge: 'PRONTO' },
+  { icon: CreditCard,     label: 'Suscripción',   color: 'bg-yellow-600', to: null, badge: 'PRONTO' },
   { icon: FileBarChart,   label: 'Reportes',      color: 'bg-green-700',  to: '/reportes' },
   { icon: Settings,       label: 'Configuración', color: 'bg-gray-600',   to: '/configuracion' },
 ]
@@ -29,8 +29,9 @@ export default function Mas() {
         {TILES.map(t => (
           <button
             key={t.label}
-            onClick={() => navigate(t.to)}
+            onClick={() => t.to && navigate(t.to)}
             className="bg-surface-card rounded-2xl p-4 flex flex-col items-center gap-3 active:opacity-70 relative"
+            style={!t.to ? { opacity: 0.5 } : {}}
           >
             {t.badge && (
               <span className="absolute top-2 right-2 bg-brand-blue text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
