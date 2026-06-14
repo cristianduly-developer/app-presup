@@ -119,7 +119,7 @@ export default function Clientes() {
 
       {/* modal nuevo cliente */}
       {showNuevo && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowNuevo(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setShowNuevo(false)}>
           <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6 overflow-y-auto max-h-[85vh]"
             style={{ background: '#161622' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">

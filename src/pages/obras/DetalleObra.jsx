@@ -311,7 +311,7 @@ export default function DetalleObra() {
 
       {/* modal */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setModal(null)}>
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setModal(null)}>
           <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6"
             style={{ background: '#161622', border: '1px solid #1E1E2E' }}
             onClick={e => e.stopPropagation()}>

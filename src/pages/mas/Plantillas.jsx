@@ -18,12 +18,13 @@ export default function Plantillas() {
   const plan = usePlan()
   const { plantillas, loading, crear, eliminar } = usePlantillas()
 
-  if (!tieneFeature(plan, 'plantillas')) return <UpgradeWall feature="Plantillas por oficio" navigate={navigate} />
   const [expandida, setExpandida] = useState(null)
   const [showNueva, setShowNueva] = useState(false)
   const [form, setForm] = useState({ nombre: '', oficio: 'plomero', emoji: '💧', descripcion: '' })
   const [items, setItems] = useState([{ descripcion: '', tipo: 'material', precio: '' }])
   const [guardando, setGuardando] = useState(false)
+
+  if (!tieneFeature(plan, 'plantillas')) return <UpgradeWall feature="Plantillas por oficio" navigate={navigate} />
 
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const setItem = (i, k, v) => setItems(its => its.map((it, idx) => idx === i ? { ...it, [k]: v } : it))
@@ -134,7 +135,7 @@ export default function Plantillas() {
 
       {/* modal nueva plantilla */}
       {showNueva && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowNueva(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setShowNueva(false)}>
           <div className="w-full max-w-[430px] mx-auto rounded-t-3xl overflow-y-auto max-h-[90vh]"
             style={{ background: '#161622' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 pt-6 pb-4">

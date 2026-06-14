@@ -223,7 +223,7 @@ export default function Agenda() {
 
       {/* modal nueva visita */}
       {showNueva && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowNueva(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setShowNueva(false)}>
           <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6 overflow-y-auto max-h-[85vh]"
             style={{ background: '#161622' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">

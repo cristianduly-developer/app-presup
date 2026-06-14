@@ -104,7 +104,7 @@ export default function NuevoPresupuesto() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-32" style={{ background: '#0D0D14' }}>
+    <div className="flex-1 overflow-y-auto pb-48" style={{ background: '#0D0D14' }}>
       {/* header */}
       <div className="flex items-center gap-3 px-4 pt-12 pb-4 sticky top-0 z-10" style={{ background: '#0D0D14' }}>
         <button onClick={() => step > 1 ? setStep(s => s - 1) : navigate(-1)} className="text-gray-400">
