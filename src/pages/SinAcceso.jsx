@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-const CENTRAL_URL = 'https://ngymvfvlknaltsvsrvjm.supabase.co'
-const CENTRAL_KEY = 'sb_publishable_CJQPQElcEzA9CACfuNllYg_Pe9lwvXy'
+const CENTRAL_URL   = 'https://ngymvfvlknaltsvsrvjm.supabase.co'
+const CENTRAL_KEY   = 'sb_publishable_CJQPQElcEzA9CACfuNllYg_Pe9lwvXy'
+const SOPORTE_WA    = '5492236262516' // tu número de WhatsApp con código de país
 
 const PLANES_BASE = [
   {
@@ -180,32 +181,49 @@ export default function SinAcceso({ estado, diasRestantes, email }) {
                 </div>
 
                 {/* botón */}
-                <a href={`https://wa.me/5492234000000?text=${encodeURIComponent(`Hola! Quiero el plan ${p.label} de App-presup. Mi email: ${email}`)}`}
-                  target="_blank" rel="noreferrer"
-                  className="mt-4 block w-full py-3 rounded-2xl text-white font-bold text-[14px] text-center"
-                  style={{ background: p.destacado ? p.color : p.color + '33', color: p.destacado ? '#fff' : p.color }}>
-                  Quiero el plan {p.label}
-                </a>
+                <div className="mt-4 w-full py-3 rounded-2xl font-bold text-[14px] text-center"
+                  style={{ background: p.color + '22', color: p.color }}>
+                  Contactá al soporte para activar
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* CTA suspendido */}
-      {esSuspend && (
-        <div className="px-4 mb-6">
-          <a href={`https://wa.me/5492234000000?text=${waMsg}`}
-            target="_blank" rel="noreferrer"
-            className="block w-full py-4 rounded-2xl text-white font-bold text-[15px] text-center"
-            style={{ background: '#3B82F6' }}>
-            💬 Contactar soporte
-          </a>
+      {/* Ya usan la app */}
+      <div className="px-4 mb-8">
+        <p className="text-gray-500 text-[10px] font-semibold tracking-widest text-center mb-4">YA LO USAN</p>
+        <div className="flex flex-col gap-3">
+          {[
+            { inicial: 'M', nombre: 'Martín G.',   oficio: 'Gasista matriculado',   ciudad: 'Mar del Plata', color: '#3B82F6' },
+            { inicial: 'R', nombre: 'Roberto S.',  oficio: 'Plomero',               ciudad: 'Buenos Aires',  color: '#22C55E' },
+            { inicial: 'A', nombre: 'Alejandro V.', oficio: 'Electricista',         ciudad: 'Córdoba',       color: '#F97316' },
+            { inicial: 'P', nombre: 'Pablo M.',    oficio: 'Instalador de aire',    ciudad: 'Rosario',       color: '#A855F7' },
+          ].map(c => (
+            <div key={c.nombre} className="flex items-center gap-3 rounded-2xl px-4 py-3"
+              style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0"
+                style={{ background: c.color }}>
+                {c.inicial}
+              </div>
+              <div>
+                <p className="text-white font-semibold text-[13px]">{c.nombre}</p>
+                <p className="text-gray-500 text-[11px]">{c.oficio} · {c.ciudad}</p>
+              </div>
+              <div className="ml-auto">
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                  style={{ background: 'rgba(34,197,94,.15)', color: '#22C55E' }}>
+                  ✓ Activo
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       <button onClick={() => supabase.auth.signOut()}
-        className="text-gray-600 text-[12px] underline text-center mx-auto block">
+        className="text-gray-600 text-[12px] underline text-center mx-auto block mb-4">
         Cerrar sesión ({email})
       </button>
     </div>

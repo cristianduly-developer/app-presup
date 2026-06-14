@@ -52,8 +52,9 @@ export default function RegistroRapido() {
 
   const [obras, setObras] = useState([])
   const [obraId, setObraId] = useState('')
-  const [form, setForm] = useState({})
+  const [form, setForm] = useState({ fecha: new Date().toISOString().split('T')[0] })
   const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     supabase.from('obras')
@@ -69,13 +70,16 @@ export default function RegistroRapido() {
     const valorPrincipal = form[cfg.campoMonto]
     if (!valorPrincipal) return
     setGuardando(true)
-    await supabase.from(cfg.tabla).insert({
+    setError('')
+    const { error: err } = await supabase.from(cfg.tabla).insert({
       user_id:  user.id,
       obra_id:  obraId || null,
       ...form,
+      fecha: form.fecha || new Date().toISOString().split('T')[0],
       [cfg.campoMonto]: Number(valorPrincipal) || 0,
     })
     setGuardando(false)
+    if (err) { setError(err.message); return }
     if (obraId) navigate(`/obras/${obraId}`)
     else navigate('/obras')
   }
@@ -124,6 +128,8 @@ export default function RegistroRapido() {
             className="w-full rounded-2xl px-4 py-3.5 text-white text-[14px] outline-none"
             style={{ background: '#161622', border: '1px solid #1E1E2E' }} />
         </div>
+
+        {error && <p className="text-red-400 text-[12px] text-center">{error}</p>}
 
         <button onClick={guardar} disabled={guardando || !form[cfg.campoMonto]}
           className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-2 disabled:opacity-50"
