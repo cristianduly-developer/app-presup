@@ -1,11 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Home, Calendar, FileText, HardHat, MoreHorizontal, Plus } from 'lucide-react'
+import { Home, FileText, HardHat, MoreHorizontal, Plus } from 'lucide-react'
 
 const TABS = [
   { to: '/',             Icon: Home,           label: 'Inicio' },
-  { to: '/agenda',       Icon: Calendar,       label: 'Agenda' },
-  null, // botón central
   { to: '/presupuestos', Icon: FileText,        label: 'Presupuestos' },
+  null, // botón central
   { to: '/obras',        Icon: HardHat,         label: 'Obras' },
   { to: '/mas',          Icon: MoreHorizontal,  label: 'Más' },
 ]
