@@ -50,16 +50,9 @@ export default function Inicio() {
 
       {/* header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-4">
-        <div className="flex items-center gap-3">
-          <button>
-            <span className="flex flex-col gap-[5px]">
-              {[0,1,2].map(i => <span key={i} className="block w-5 h-0.5 bg-gray-500 rounded" />)}
-            </span>
-          </button>
-          <div>
-            <p className="text-white font-bold text-[18px] leading-tight">Hola, {nombre} 👋</p>
-            <p className="text-gray-500 text-[13px]">{hoyFmt}</p>
-          </div>
+        <div>
+          <p className="text-white font-bold text-[18px] leading-tight">Hola, {nombre} 👋</p>
+          <p className="text-gray-500 text-[13px]">{hoyFmt}</p>
         </div>
         <div className="flex gap-3 items-center">
           <button><Search size={20} className="text-gray-400" /></button>

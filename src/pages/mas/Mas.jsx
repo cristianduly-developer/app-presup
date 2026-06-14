@@ -1,77 +1,122 @@
 import { useNavigate } from 'react-router-dom'
-import { BarChart2, Users, LayoutTemplate, Camera, Sparkles, Users2, CreditCard, Settings, FileBarChart } from 'lucide-react'
+import { BarChart2, Users, LayoutTemplate, Camera, Sparkles, Users2, FileBarChart, Settings, MessageCircle, LogOut, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 
+const WA_SOPORTE = '5492235767784'
+
 const TILES = [
-  { icon: BarChart2,      label: 'Estadísticas',  color: 'bg-blue-600',   to: '/estadisticas' },
-  { icon: Users,          label: 'Clientes',      color: 'bg-teal-600',   to: '/clientes' },
-  { icon: LayoutTemplate, label: 'Plantillas',    color: 'bg-orange-600', to: '/plantillas' },
-  { icon: Camera,         label: 'Trabajos',      color: 'bg-purple-600', to: '/obras', badge: null },
-  { icon: Sparkles,       label: 'IA',            color: 'bg-violet-600', to: null, badge: 'PRONTO' },
-  { icon: Users2,         label: 'Equipo',        color: 'bg-cyan-700',   to: null, badge: 'PRONTO' },
-  { icon: CreditCard,     label: 'Suscripción',   color: 'bg-yellow-600', to: null, badge: 'PRONTO' },
-  { icon: FileBarChart,   label: 'Reportes',      color: 'bg-green-700',  to: '/reportes' },
-  { icon: Settings,       label: 'Configuración', color: 'bg-gray-600',   to: '/configuracion' },
+  { icon: BarChart2,      label: 'Estadísticas',  color: '#2563EB', to: '/estadisticas' },
+  { icon: Users,          label: 'Clientes',      color: '#0D9488', to: '/clientes' },
+  { icon: LayoutTemplate, label: 'Plantillas',    color: '#EA580C', to: '/plantillas' },
+  { icon: Camera,         label: 'Trabajos',      color: '#7C3AED', to: '/obras' },
+  { icon: Sparkles,       label: 'IA',            color: '#6D28D9', to: null, badge: 'PRONTO' },
+  { icon: Users2,         label: 'Equipo',        color: '#0E7490', to: null, badge: 'PRONTO' },
+  { icon: FileBarChart,   label: 'Reportes',      color: '#15803D', to: '/reportes' },
 ]
 
-export default function Mas() {
+export default function Mas({ plan }) {
   const navigate = useNavigate()
-  const { perfil } = useAuth()
+  const { perfil, user, logout } = useAuth()
+
+  const avatar = perfil?.nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?'
+  const foto = user?.user_metadata?.avatar_url
+
+  const planLabel = plan === 'profesional' ? 'Profesional' : plan === 'premium' ? 'Premium' : 'Básico'
+  const planColor = plan === 'profesional' ? '#3B82F6' : plan === 'premium' ? '#A855F7' : '#6B7280'
+
+  const waMsg = encodeURIComponent(`Hola! Necesito soporte para App-presup. Mi email: ${user?.email}`)
 
   return (
-    <div className="flex-1 overflow-y-auto pb-24 safe-top">
-      <div className="px-5 pt-4 pb-3">
-        <h1 className="text-white font-bold text-xl">Más</h1>
-        <p className="text-gray-500 text-sm">Centro de control</p>
+    <div className="flex-1 overflow-y-auto pb-24" style={{ background: '#0D0D14' }}>
+
+      {/* header usuario */}
+      <div className="px-4 pt-12 pb-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-white font-bold text-[20px]">Más</h1>
+          <p className="text-gray-500 text-[13px]">Centro de control</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {foto
+            ? <img src={foto} className="w-10 h-10 rounded-full object-cover" alt="avatar" />
+            : <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">{avatar}</div>
+          }
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 px-4">
+      {/* tiles */}
+      <div className="grid grid-cols-3 gap-3 px-4 mb-6">
         {TILES.map(t => (
-          <button
-            key={t.label}
+          <button key={t.label}
             onClick={() => t.to && navigate(t.to)}
-            className="bg-surface-card rounded-2xl p-4 flex flex-col items-center gap-3 active:opacity-70 relative"
-            style={!t.to ? { opacity: 0.5 } : {}}
-          >
+            className="rounded-2xl p-4 flex flex-col items-center gap-2 active:opacity-70 relative"
+            style={{ background: '#161622', border: '1px solid #1E1E2E', opacity: t.to ? 1 : 0.55 }}>
             {t.badge && (
-              <span className="absolute top-2 right-2 bg-brand-blue text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="absolute top-2 right-2 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: '#3B82F6' }}>
                 {t.badge}
               </span>
             )}
-            <div className={`w-12 h-12 rounded-2xl ${t.color} flex items-center justify-center`}>
-              <t.icon size={22} className="text-white" />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              style={{ background: t.color + '33' }}>
+              <t.icon size={22} style={{ color: t.color }} />
             </div>
-            <span className="text-white text-xs font-medium text-center leading-tight">{t.label}</span>
+            <span className="text-white text-[12px] font-medium text-center leading-tight">{t.label}</span>
           </button>
         ))}
       </div>
 
-      {/* perfil rápido */}
-      <div className="mx-4 mt-5 bg-surface-card rounded-2xl p-4 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-lg shrink-0">
-          {perfil?.nombre?.charAt(0)?.toUpperCase() || '?'}
+      {/* panel cuenta */}
+      <div className="mx-4 rounded-2xl overflow-hidden" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+
+        {/* nombre + plan */}
+        <div className="flex items-center gap-3 px-4 py-4" style={{ borderBottom: '1px solid #1E1E2E' }}>
+          {foto
+            ? <img src={foto} className="w-12 h-12 rounded-full object-cover shrink-0" alt="avatar" />
+            : <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg shrink-0">{avatar}</div>
+          }
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-[15px] truncate">{perfil?.nombre || user?.email}</p>
+            <p className="text-gray-500 text-[12px] truncate">{perfil?.oficio || ''}</p>
+          </div>
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
+            style={{ background: planColor + '22', color: planColor }}>
+            {planLabel}
+          </span>
         </div>
-        <div className="flex-1">
-          <p className="text-white font-semibold">{perfil?.nombre || 'Mi perfil'}</p>
-          <p className="text-gray-500 text-xs">{[perfil?.oficio, perfil?.ciudad].filter(Boolean).join(' · ') || 'Completá tu perfil'}</p>
-        </div>
-        <button onClick={() => navigate('/configuracion')} className="text-gray-500">
-          <Settings size={18} />
+
+        {/* configuración */}
+        <button onClick={() => navigate('/configuracion')}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70"
+          style={{ borderBottom: '1px solid #1E1E2E' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#6B728022' }}>
+            <Settings size={18} className="text-gray-400" />
+          </div>
+          <span className="flex-1 text-white text-[14px] text-left">Configuración</span>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
+
+        {/* contactar soporte */}
+        <a href={`https://wa.me/${WA_SOPORTE}?text=${waMsg}`}
+          target="_blank" rel="noreferrer"
+          className="flex items-center gap-3 px-4 py-3.5 active:opacity-70"
+          style={{ borderBottom: '1px solid #1E1E2E' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#22C55E22' }}>
+            <MessageCircle size={18} style={{ color: '#22C55E' }} />
+          </div>
+          <span className="flex-1 text-white text-[14px]">Contactar soporte</span>
+          <ChevronRight size={16} className="text-gray-600" />
+        </a>
+
+        {/* cerrar sesión */}
+        <button onClick={logout}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#EF444422' }}>
+            <LogOut size={18} style={{ color: '#EF4444' }} />
+          </div>
+          <span className="flex-1 text-[14px] text-left" style={{ color: '#EF4444' }}>Cerrar sesión</span>
         </button>
       </div>
 
-      <div className="mx-4 mt-3 bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-2xl p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-white font-semibold text-sm">Plan Profesional</p>
-            <p className="text-gray-400 text-xs">Vence el 20/06/2025</p>
-          </div>
-          <button onClick={() => navigate('/suscripcion')}
-            className="bg-brand-blue text-white text-xs font-semibold px-4 py-2 rounded-xl">
-            Ver plan
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
