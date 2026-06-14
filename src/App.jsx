@@ -14,6 +14,7 @@ import Mas from './pages/mas/Mas'
 import Configuracion from './pages/mas/Configuracion'
 import Reportes from './pages/mas/Reportes'
 import Clientes from './pages/mas/Clientes'
+import HistorialCliente from './pages/mas/HistorialCliente'
 import Estadisticas from './pages/mas/Estadisticas'
 import DetalleObra from './pages/obras/DetalleObra'
 import LinkPublico from './pages/LinkPublico'
@@ -48,6 +49,7 @@ export default function App() {
                 <Route path="/obras/:id" element={<DetalleObra />} />
                 <Route path="/mas" element={<Mas />} />
                 <Route path="/clientes" element={<Clientes />} />
+                <Route path="/clientes/:id" element={<HistorialCliente />} />
                 <Route path="/estadisticas" element={<Estadisticas />} />
                 <Route path="/configuracion" element={<Configuracion />} />
                 <Route path="/reportes" element={<Reportes />} />

@@ -105,7 +105,8 @@ export default function Clientes() {
                       WhatsApp
                     </a>
                   )}
-                  <button className="flex-1 py-2 rounded-xl text-[11px] font-semibold"
+                  <button onClick={() => navigate(`/clientes/${c.id}`)}
+                    className="flex-1 py-2 rounded-xl text-[11px] font-semibold"
                     style={{ background: 'rgba(107,114,128,.12)', color: '#9CA3AF' }}>
                     Ver historial
                   </button>
