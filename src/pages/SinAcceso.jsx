@@ -1,9 +1,54 @@
 import { supabase } from '../lib/supabase'
 
 const PLANES = [
-  { key: 'basico',      label: 'Básico',       precio: '$8.000/mes',  features: ['Hasta 10 presupuestos/mes', 'Obras y clientes ilimitados', 'Link público para clientes'], color: '#6B7280' },
-  { key: 'profesional', label: 'Profesional',  precio: '$15.000/mes', features: ['Presupuestos ilimitados', 'Exportar PDF', 'Plantillas por oficio', 'Estadísticas avanzadas'], color: '#3B82F6', destacado: true },
-  { key: 'premium',     label: 'Premium',      precio: '$25.000/mes', features: ['Todo lo anterior', 'IA para presupuestar', 'Cobro online Mercado Pago', 'Equipo multiusuario'], color: '#A855F7' },
+  {
+    key: 'basico', label: 'Básico', precio: '$8.000', periodo: '/mes', color: '#6B7280',
+    features: [
+      { ok: true,  icon: '📋', texto: 'Hasta 10 presupuestos por mes' },
+      { ok: true,  icon: '🏗',  texto: 'Obras ilimitadas' },
+      { ok: true,  icon: '👥', texto: 'Clientes ilimitados' },
+      { ok: true,  icon: '🔗', texto: 'Link público para cliente' },
+      { ok: true,  icon: '📅', texto: 'Agenda de visitas' },
+      { ok: false, icon: '📄', texto: 'Exportar PDF' },
+      { ok: false, icon: '📋', texto: 'Plantillas por oficio' },
+      { ok: false, icon: '📊', texto: 'Estadísticas avanzadas' },
+      { ok: false, icon: '✨', texto: 'IA para presupuestar' },
+      { ok: false, icon: '💳', texto: 'Cobro online Mercado Pago' },
+      { ok: false, icon: '👷', texto: 'Equipo multiusuario' },
+    ],
+  },
+  {
+    key: 'profesional', label: 'Profesional', precio: '$15.000', periodo: '/mes', color: '#3B82F6', destacado: true,
+    features: [
+      { ok: true,  icon: '📋', texto: 'Presupuestos ilimitados' },
+      { ok: true,  icon: '🏗',  texto: 'Obras ilimitadas' },
+      { ok: true,  icon: '👥', texto: 'Clientes ilimitados' },
+      { ok: true,  icon: '🔗', texto: 'Link público para cliente' },
+      { ok: true,  icon: '📅', texto: 'Agenda de visitas' },
+      { ok: true,  icon: '📄', texto: 'Exportar PDF' },
+      { ok: true,  icon: '📋', texto: 'Plantillas por oficio' },
+      { ok: true,  icon: '📊', texto: 'Estadísticas avanzadas' },
+      { ok: false, icon: '✨', texto: 'IA para presupuestar' },
+      { ok: false, icon: '💳', texto: 'Cobro online Mercado Pago' },
+      { ok: false, icon: '👷', texto: 'Equipo multiusuario' },
+    ],
+  },
+  {
+    key: 'premium', label: 'Premium', precio: '$25.000', periodo: '/mes', color: '#A855F7',
+    features: [
+      { ok: true, icon: '📋', texto: 'Presupuestos ilimitados' },
+      { ok: true, icon: '🏗',  texto: 'Obras ilimitadas' },
+      { ok: true, icon: '👥', texto: 'Clientes ilimitados' },
+      { ok: true, icon: '🔗', texto: 'Link público para cliente' },
+      { ok: true, icon: '📅', texto: 'Agenda de visitas' },
+      { ok: true, icon: '📄', texto: 'Exportar PDF' },
+      { ok: true, icon: '📋', texto: 'Plantillas por oficio' },
+      { ok: true, icon: '📊', texto: 'Estadísticas avanzadas' },
+      { ok: true, icon: '✨', texto: 'IA para presupuestar' },
+      { ok: true, icon: '💳', texto: 'Cobro online Mercado Pago' },
+      { ok: true, icon: '👷', texto: 'Equipo multiusuario' },
+    ],
+  },
 ]
 
 export default function SinAcceso({ estado, diasRestantes, email }) {
@@ -12,99 +57,127 @@ export default function SinAcceso({ estado, diasRestantes, email }) {
   const esSuspend = estado === 'suspendido'
 
   const titulo = esDemo && diasRestantes > 0
-    ? `Tu período de prueba vence en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`
-    : esDemo
-    ? 'Tu período de prueba venció'
-    : esImpago
-    ? 'Suscripción vencida'
-    : esSuspend
-    ? 'Acceso suspendido'
-    : 'Sin acceso'
+    ? `Tu prueba vence en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`
+    : esDemo        ? 'Tu período de prueba venció'
+    : esImpago      ? 'Suscripción vencida'
+    : esSuspend     ? 'Acceso suspendido'
+    : 'Elegí tu plan'
 
   const subtitulo = esDemo && diasRestantes > 0
-    ? 'Activá tu plan para seguir usando la app sin interrupciones'
-    : esImpago
-    ? 'Registrá tu pago para reactivar el acceso'
-    : esSuspend
-    ? 'Contactá al soporte para resolver el problema'
-    : 'Tu cuenta no tiene una suscripción activa para App-presup'
+    ? 'Activá un plan para seguir usando la app'
+    : esImpago      ? 'Registrá tu pago para reactivar el acceso'
+    : esSuspend     ? 'Contactá al soporte para resolver el problema'
+    : 'Gestioná tus presupuestos, obras y clientes desde el celular'
+
+  const waMsg = encodeURIComponent(
+    esImpago  ? `Hola! Quiero regularizar mi suscripción a App-presup. Mi email: ${email}` :
+    esSuspend ? `Hola! Mi acceso a App-presup está suspendido. Mi email: ${email}` :
+                `Hola! Quiero activar mi suscripción a App-presup. Mi email: ${email}`
+  )
 
   return (
-    <div className="flex flex-col min-h-full items-center justify-start pt-16 px-5 pb-12"
-      style={{ background: '#0D0D14' }}>
+    <div className="flex flex-col pb-12" style={{ background: '#0D0D14', minHeight: '100%' }}>
 
-      {/* ícono */}
-      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4"
-        style={{ background: 'rgba(59,130,246,.15)', border: '1px solid rgba(59,130,246,.3)' }}>
-        <span className="text-4xl">🔧</span>
+      {/* header */}
+      <div className="flex flex-col items-center pt-14 pb-6 px-5 text-center">
+        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4"
+          style={{ background: 'rgba(59,130,246,.15)', border: '1px solid rgba(59,130,246,.3)' }}>
+          <span className="text-4xl">🔧</span>
+        </div>
+        <h1 className="text-white font-bold text-[22px] mb-2">{titulo}</h1>
+        <p className="text-gray-400 text-[14px] max-w-xs">{subtitulo}</p>
       </div>
-
-      <h1 className="text-white font-bold text-[22px] text-center mb-2">{titulo}</h1>
-      <p className="text-gray-400 text-[14px] text-center mb-8 max-w-xs">{subtitulo}</p>
 
       {/* banner demo activo */}
       {esDemo && diasRestantes > 0 && (
-        <div className="w-full rounded-2xl p-4 mb-6 text-center"
+        <div className="mx-4 rounded-2xl p-3 mb-4 text-center"
           style={{ background: 'rgba(251,191,36,.1)', border: '1px solid rgba(251,191,36,.3)' }}>
           <p className="text-yellow-400 font-semibold text-[13px]">
-            ⚠️ Tenés {diasRestantes} día{diasRestantes !== 1 ? 's' : ''} de demo restantes
+            ⚠️ Te quedan {diasRestantes} día{diasRestantes !== 1 ? 's' : ''} de prueba gratuita
           </p>
         </div>
       )}
 
       {/* planes */}
       {!esSuspend && (
-        <>
-          <p className="text-gray-500 text-[11px] font-semibold tracking-widest mb-4">ELEGÍ TU PLAN</p>
-          <div className="flex flex-col gap-3 w-full mb-8">
-            {PLANES.map(p => (
-              <div key={p.key} className="rounded-2xl p-4 relative"
-                style={{
-                  background: p.destacado ? `rgba(59,130,246,.1)` : '#161622',
-                  border: `1px solid ${p.destacado ? '#3B82F6' : '#1E1E2E'}`,
-                }}>
-                {p.destacado && (
-                  <span className="absolute -top-2.5 left-4 text-[10px] font-bold px-3 py-0.5 rounded-full"
-                    style={{ background: '#3B82F6', color: '#fff' }}>MÁS POPULAR</span>
-                )}
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-white font-bold text-[16px]">{p.label}</p>
-                  <p className="font-bold text-[15px]" style={{ color: p.color }}>{p.precio}</p>
+        <div className="px-4 flex flex-col gap-4 mb-6">
+          <p className="text-gray-500 text-[10px] font-semibold tracking-widest text-center">PLANES DISPONIBLES</p>
+
+          {PLANES.map(p => (
+            <div key={p.key} className="rounded-2xl overflow-hidden relative"
+              style={{
+                background: p.destacado ? 'rgba(59,130,246,.08)' : '#161622',
+                border: `1px solid ${p.destacado ? '#3B82F6' : '#1E1E2E'}`,
+              }}>
+
+              {p.destacado && (
+                <div className="text-center py-1.5 text-[11px] font-bold tracking-wide"
+                  style={{ background: '#3B82F6', color: '#fff' }}>
+                  ⭐ MÁS POPULAR
                 </div>
-                <div className="flex flex-col gap-1">
-                  {p.features.map(f => (
-                    <div key={f} className="flex items-center gap-2">
-                      <span className="text-[11px]" style={{ color: p.color }}>✓</span>
-                      <span className="text-gray-400 text-[12px]">{f}</span>
+              )}
+
+              <div className="p-4">
+                {/* cabecera plan */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-white font-bold text-[18px]">{p.label}</p>
+                    <div className="flex items-baseline gap-0.5 mt-0.5">
+                      <span className="font-bold text-[24px]" style={{ color: p.color }}>{p.precio}</span>
+                      <span className="text-gray-500 text-[12px]">{p.periodo}</span>
+                    </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: p.color + '22' }}>
+                    <span className="text-2xl">
+                      {p.key === 'basico' ? '🔩' : p.key === 'profesional' ? '⚡' : '🚀'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* features */}
+                <div className="flex flex-col gap-2">
+                  {p.features.map((f, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: f.ok ? p.color + '22' : 'rgba(107,114,128,.1)' }}>
+                        <span className="text-[11px]">{f.ok ? '✓' : '✕'}</span>
+                      </div>
+                      <span className="text-[12px]" style={{ color: f.ok ? '#E5E7EB' : '#4B5563' }}>
+                        {f.icon} {f.texto}
+                      </span>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
 
-          {/* CTA WhatsApp */}
-          <a href={`https://wa.me/5492234000000?text=${encodeURIComponent(`Hola! Quiero activar mi suscripción a App-presup. Mi email es: ${email}`)}`}
-            target="_blank" rel="noreferrer"
-            className="w-full py-4 rounded-2xl text-white font-bold text-[15px] text-center block mb-3"
-            style={{ background: '#22C55E' }}>
-            💬 Activar por WhatsApp
-          </a>
-        </>
+                {/* botón */}
+                <a href={`https://wa.me/5492234000000?text=${encodeURIComponent(`Hola! Quiero el plan ${p.label} de App-presup. Mi email: ${email}`)}`}
+                  target="_blank" rel="noreferrer"
+                  className="mt-4 block w-full py-3 rounded-2xl text-white font-bold text-[14px] text-center"
+                  style={{ background: p.destacado ? p.color : p.color + '33', color: p.destacado ? '#fff' : p.color }}>
+                  Quiero el plan {p.label}
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
+      {/* CTA suspendido */}
       {esSuspend && (
-        <a href={`https://wa.me/5492234000000?text=${encodeURIComponent(`Hola! Mi acceso a App-presup aparece suspendido. Mi email es: ${email}`)}`}
-          target="_blank" rel="noreferrer"
-          className="w-full py-4 rounded-2xl text-white font-bold text-[15px] text-center block mb-3"
-          style={{ background: '#3B82F6' }}>
-          💬 Contactar soporte
-        </a>
+        <div className="px-4 mb-6">
+          <a href={`https://wa.me/5492234000000?text=${waMsg}`}
+            target="_blank" rel="noreferrer"
+            className="block w-full py-4 rounded-2xl text-white font-bold text-[15px] text-center"
+            style={{ background: '#3B82F6' }}>
+            💬 Contactar soporte
+          </a>
+        </div>
       )}
 
       <button onClick={() => supabase.auth.signOut()}
-        className="text-gray-600 text-[13px] underline">
-        Cerrar sesión
+        className="text-gray-600 text-[12px] underline text-center mx-auto block">
+        Cerrar sesión ({email})
       </button>
     </div>
   )
