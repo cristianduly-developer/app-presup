@@ -53,7 +53,8 @@ export default function App() {
   // Estado de la suscripción para mostrar advertencias
   const estadoSus  = suscripcion?.estado || null
   const diasRestantes = suscripcion?.dias_restantes ?? null
-  const plan       = esAdmin ? 'premium' : (suscripcion?.plan || 'basico')
+  const planRaw = esAdmin ? 'sincargo' : (suscripcion?.plan || 'basico')
+  const plan    = planRaw === 'sincargo' ? 'profesional' : planRaw
 
   return (
     <BrowserRouter>
