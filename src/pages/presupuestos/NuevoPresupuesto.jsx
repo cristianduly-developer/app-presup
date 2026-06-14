@@ -4,6 +4,8 @@ import { ArrowLeft, Plus, Trash2, Check } from 'lucide-react'
 import { usePresupuestos } from '../../lib/usePresupuestos'
 import { useClientes } from '../../lib/useClientes'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../lib/useAuth'
+import { usePlan, LIMITES } from '../../lib/PlanContext'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
@@ -16,6 +18,9 @@ export default function NuevoPresupuesto() {
 
   const { crear } = usePresupuestos()
   const { clientes, crear: crearCliente } = useClientes()
+  const { user } = useAuth()
+  const plan = usePlan()
+  const [limiteError, setLimiteError] = useState('')
 
   const [step, setStep] = useState(1)
   const [clienteId, setClienteId] = useState('')
@@ -72,6 +77,18 @@ export default function NuevoPresupuesto() {
   }
 
   async function guardar(status = 'borrador') {
+    const limite = LIMITES[plan]?.presupuestos ?? 50
+    if (limite !== Infinity) {
+      const inicio = new Date(); inicio.setDate(1); inicio.setHours(0,0,0,0)
+      const { count } = await supabase.from('presupuestos')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', inicio.toISOString())
+      if (count >= limite) {
+        setLimiteError(`Tu plan ${plan} permite hasta ${limite} presupuestos por mes. Ya usaste ${count}.`)
+        return
+      }
+    }
     setGuardando(true)
     let cId = clienteId
     if (modoCliente === 'nuevo' && clienteNuevo.nombre) {
@@ -328,6 +345,12 @@ export default function NuevoPresupuesto() {
           </div>
 
           <div className="flex flex-col gap-3 mt-2">
+            {limiteError && (
+              <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)' }}>
+                <p className="text-red-400 text-[13px]">🚫 {limiteError}</p>
+                <p className="text-gray-500 text-[11px] mt-1">Mejorá tu plan para seguir creando</p>
+              </div>
+            )}
             <button onClick={() => guardar('borrador')} disabled={guardando}
               className="w-full py-4 rounded-2xl font-bold text-[15px] disabled:opacity-50"
               style={{ background: '#161622', color: '#9CA3AF', border: '1px solid #2A2A3A' }}>

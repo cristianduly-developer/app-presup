@@ -4,11 +4,14 @@ import { ArrowLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
 import { useClientes } from '../../lib/useClientes'
+import { usePlan, LIMITES } from '../../lib/PlanContext'
 
 export default function NuevaObra() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { clientes } = useClientes()
+  const plan = usePlan()
+  const [limiteError, setLimiteError] = useState('')
   const [form, setForm] = useState({
     nombre: '', cliente_id: '', direccion: '', descripcion: '',
     total: '', fecha_inicio: new Date().toISOString().split('T')[0],
@@ -19,6 +22,17 @@ export default function NuevaObra() {
 
   async function guardar() {
     if (!form.nombre.trim()) return
+    const limite = LIMITES[plan]?.obras ?? 30
+    if (limite !== Infinity) {
+      const { count } = await supabase.from('obras')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .in('status', ['en_ejecucion', 'pendiente_cobro'])
+      if (count >= limite) {
+        setLimiteError(`Tu plan ${plan} permite hasta ${limite} obras activas. Ya tenés ${count}.`)
+        return
+      }
+    }
     setGuardando(true)
     const { data, error } = await supabase.from('obras').insert({
       user_id:     user.id,
@@ -91,6 +105,12 @@ export default function NuevaObra() {
             style={{ background: '#161622', border: '1px solid #1E1E2E' }} />
         </div>
 
+        {limiteError && (
+          <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)' }}>
+            <p className="text-red-400 text-[13px]">🚫 {limiteError}</p>
+            <p className="text-gray-500 text-[11px] mt-1">Mejorá tu plan para seguir creando</p>
+          </div>
+        )}
         <button onClick={guardar} disabled={guardando || !form.nombre.trim()}
           className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-2 disabled:opacity-50"
           style={{ background: '#3B82F6' }}>

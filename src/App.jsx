@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useAuth } from './lib/useAuth'
 import { verificarSuscripcion } from './lib/useSuscripcion'
+import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
 import Login from './pages/Login'
@@ -47,7 +48,7 @@ export default function App() {
   const estadoSus     = suscripcion?.estado || null
   const diasRestantes = suscripcion?.dias_restantes ?? null
   const planRaw = suscripcion?.plan || 'basico'
-  const plan    = planRaw === 'sincargo' ? 'profesional' : planRaw
+  const plan    = (planRaw === 'sincargo' || planRaw === 'demo') ? 'profesional' : planRaw
 
   return (
     <BrowserRouter>
@@ -66,12 +67,12 @@ export default function App() {
               <SinAcceso estado={estadoSus} diasRestantes={diasRestantes} email={user.email} />
             </div>
           ) : (
+            <PlanContext.Provider value={plan}>
             <div className="flex flex-col h-full relative">
-              {/* banner demo si quedan pocos días */}
-              {estadoSus === 'demo' && diasRestantes != null && diasRestantes <= 3 && (
+              {estadoSus === 'demo' && diasRestantes != null && (
                 <div className="text-center py-2 text-[11px] font-semibold z-50"
                   style={{ background: '#78350F', color: '#FCD34D' }}>
-                  ⚠️ Demo vence en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}
+                  ⏳ Versión demo · vence en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}
                 </div>
               )}
               <Routes>
@@ -101,6 +102,7 @@ export default function App() {
                 </>
               )}
             </div>
+            </PlanContext.Provider>
           )
         } />
       </Routes>

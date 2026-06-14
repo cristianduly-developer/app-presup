@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, X, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { usePlantillas } from '../../lib/usePlantillas'
 import { useAuth } from '../../lib/useAuth'
+import { usePlan, tieneFeature } from '../../lib/PlanContext'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
@@ -14,7 +15,10 @@ const OFICIOS_EMOJI = {
 export default function Plantillas() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const plan = usePlan()
   const { plantillas, loading, crear, eliminar } = usePlantillas()
+
+  if (!tieneFeature(plan, 'plantillas')) return <UpgradeWall feature="Plantillas por oficio" navigate={navigate} />
   const [expandida, setExpandida] = useState(null)
   const [showNueva, setShowNueva] = useState(false)
   const [form, setForm] = useState({ nombre: '', oficio: 'plomero', emoji: '💧', descripcion: '' })
@@ -210,6 +214,29 @@ export default function Plantillas() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function UpgradeWall({ feature, navigate }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 pb-24" style={{ background: '#0D0D14' }}>
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
+        style={{ background: 'rgba(59,130,246,.15)', border: '1px solid rgba(59,130,246,.3)' }}>
+        <span className="text-4xl">🔒</span>
+      </div>
+      <div className="text-center">
+        <p className="text-white font-bold text-[18px] mb-2">{feature}</p>
+        <p className="text-gray-400 text-[14px]">Esta función está disponible desde el plan Profesional.</p>
+      </div>
+      <div className="rounded-2xl p-4 w-full text-center" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+        <p className="text-gray-500 text-[12px] mb-1">Tu plan actual</p>
+        <p className="text-white font-bold text-[16px]">Básico</p>
+      </div>
+      <button onClick={() => navigate(-1)}
+        className="text-gray-500 text-[13px] underline">
+        Volver
+      </button>
     </div>
   )
 }
