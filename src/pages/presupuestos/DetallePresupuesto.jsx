@@ -29,8 +29,12 @@ export default function DetallePresupuesto() {
   const [eliminando, setEliminando] = useState(false)
   const [confirmEliminar, setConfirmEliminar] = useState(false)
 
-  function abrirPDF() {
+  async function abrirPDF() {
     window.open(`${window.location.origin}/presupuestos/${id}/pdf`, '_blank')
+    if (p?.status === 'borrador') {
+      await supabase.from('presupuestos').update({ status: 'enviado', fecha_envio: new Date().toISOString().split('T')[0] }).eq('id', id)
+      cargar()
+    }
   }
 
   useEffect(() => { cargar() }, [id])
@@ -199,6 +203,56 @@ export default function DetallePresupuesto() {
           <span className="text-green-400 text-[11px]">WhatsApp</span>
         </button>
       </div>
+
+      {/* pipeline de etapas */}
+      {(() => {
+        const ETAPAS = [
+          { key: 'borrador',  label: 'Borrador',  color: '#6B7280' },
+          { key: 'enviado',   label: 'Enviado',   color: '#3B82F6' },
+          { key: 'aprobado',  label: 'Aprobado',  color: '#22C55E' },
+          { key: 'en_obra',   label: 'En obra',   color: '#F97316' },
+        ]
+        const statusActual = p.status === 'rechazado' ? 'rechazado' : p.status
+        const idxActual = statusActual === 'en_obra' ? 3
+          : ETAPAS.findIndex(e => e.key === statusActual)
+        if (statusActual === 'rechazado' || statusActual === 'vencido') return (
+          <div className="mx-4 mb-4 rounded-xl px-4 py-2.5 flex items-center gap-2"
+            style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)' }}>
+            <span className="text-[12px]" style={{ color: '#EF4444' }}>
+              {statusActual === 'rechazado' ? '✕ Presupuesto rechazado' : '⏰ Presupuesto vencido'}
+            </span>
+          </div>
+        )
+        return (
+          <div className="mx-4 mb-4 rounded-2xl px-4 py-3" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            <div className="flex items-center">
+              {ETAPAS.map((e, i) => {
+                const activo = i === idxActual
+                const pasado = i < idxActual
+                const color = pasado || activo ? e.color : '#2A2A3A'
+                return (
+                  <div key={e.key} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                        style={{ background: pasado || activo ? color + '22' : '#0D0D14', border: `2px solid ${color}` }}>
+                        {pasado ? <span style={{ color }}>✓</span> : <span style={{ color: activo ? color : '#4B5563' }}>{i+1}</span>}
+                      </div>
+                      <span className="text-[9px] font-semibold text-center leading-tight"
+                        style={{ color: activo ? color : pasado ? color + 'AA' : '#4B5563' }}>
+                        {e.label}
+                      </span>
+                    </div>
+                    {i < ETAPAS.length - 1 && (
+                      <div className="h-0.5 flex-1 -mt-4 mx-1"
+                        style={{ background: i < idxActual ? ETAPAS[i].color : '#2A2A3A' }} />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* cliente */}
       <div className="mx-4 mb-4 rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
