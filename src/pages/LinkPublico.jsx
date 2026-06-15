@@ -7,9 +7,12 @@ function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
 export default function LinkPublico() {
   const { token } = useParams()
-  const { data: p, loading, error, aceptar } = usePresupuestoPublico(token)
+  const { data: p, loading, error, aceptar, rechazar } = usePresupuestoPublico(token)
   const [aceptando, setAceptando] = useState(false)
   const [aceptado, setAceptado] = useState(false)
+  const [rechazado, setRechazado] = useState(false)
+  const [rechazando, setRechazando] = useState(false)
+  const [showConfirmRechazar, setShowConfirmRechazar] = useState(false)
   const [errAceptar, setErrAceptar] = useState('')
   const [showFirma, setShowFirma] = useState(false)
   const [nombreFirma, setNombreFirma] = useState('')
@@ -95,6 +98,32 @@ export default function LinkPublico() {
   const vencido = p.fecha_vence && new Date(p.fecha_vence) < new Date()
   const prof = { nombre: p.prof_nombre, oficio: p.prof_oficio, logo_url: p.prof_logo, telefono: p.prof_telefono }
 
+  async function confirmarRechazar() {
+    setRechazando(true)
+    const result = await rechazar()
+    if (result?.ok) setRechazado(true)
+    setRechazando(false)
+    setShowConfirmRechazar(false)
+  }
+
+  if (rechazado) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6" style={{ background: '#0D0D14' }}>
+      <div className="w-24 h-24 rounded-full flex items-center justify-center text-5xl"
+        style={{ background: 'rgba(239,68,68,.15)' }}>❌</div>
+      <p className="text-white font-bold text-2xl text-center">Presupuesto rechazado</p>
+      <p className="text-gray-400 text-sm text-center">
+        Se notificó a {prof?.nombre}. Podés contactarlo para ajustar el presupuesto.
+      </p>
+      {prof?.telefono && (
+        <a href={`https://wa.me/54${prof.telefono.replace(/\D/g,'')}`}
+          className="w-full max-w-sm py-4 rounded-2xl text-white font-bold text-center"
+          style={{ background: '#25D366' }}>
+          💬 Contactar por WhatsApp
+        </a>
+      )}
+    </div>
+  )
+
   if (aceptado) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6" style={{ background: '#0D0D14' }}>
       <div className="w-24 h-24 rounded-full flex items-center justify-center text-5xl"
@@ -176,7 +205,15 @@ export default function LinkPublico() {
         <div className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           <p className="text-gray-500 text-[11px] font-semibold tracking-wider mb-3">DETALLE</p>
           <div className="flex flex-col gap-3">
-            {(p.items || []).sort((a, b) => a.orden - b.orden).map((item, i) => (
+            {(p.items || []).sort((a, b) => a.orden - b.orden).map((item, i) => item.tipo === 'seccion' ? (
+              <div key={i} className="flex items-center gap-2 mt-1">
+                <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#A855F7', background: 'rgba(168,85,247,.1)' }}>
+                  📌 {item.descripcion}
+                </span>
+                <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
+              </div>
+            ) : (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-lg shrink-0">{item.tipo === 'material' ? '🔧' : '👷'}</span>
                 <div className="flex-1 min-w-0">
@@ -271,6 +308,42 @@ export default function LinkPublico() {
                       {aceptando
                         ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         : '✓ Confirmar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* botón rechazar */}
+            <button onClick={() => setShowConfirmRechazar(true)}
+              className="w-full py-3 rounded-2xl font-semibold text-[14px]"
+              style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444' }}>
+              ✕ No aceptar este presupuesto
+            </button>
+
+            {/* modal confirmación rechazo */}
+            {showConfirmRechazar && (
+              <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: 'rgba(0,0,0,.7)' }}
+                onClick={() => setShowConfirmRechazar(false)}>
+                <div className="rounded-t-3xl p-6 flex flex-col gap-4" style={{ background: '#161622' }}
+                  onClick={e => e.stopPropagation()}>
+                  <div className="w-10 h-1 rounded-full mx-auto" style={{ background: '#2A2A3A' }} />
+                  <p className="text-white font-bold text-[17px] text-center">¿Rechazar presupuesto?</p>
+                  <p className="text-gray-400 text-[13px] text-center">
+                    Se le avisará a {prof?.nombre} que no aceptaste el presupuesto #{p.numero}.
+                  </p>
+                  <div className="flex gap-3 pb-2">
+                    <button onClick={() => setShowConfirmRechazar(false)}
+                      className="flex-1 py-3 rounded-xl text-gray-400 font-semibold"
+                      style={{ background: '#0D0D14', border: '1px solid #1E1E2E' }}>
+                      Cancelar
+                    </button>
+                    <button onClick={confirmarRechazar} disabled={rechazando}
+                      className="flex-1 py-3 rounded-xl text-white font-bold flex items-center justify-center disabled:opacity-50"
+                      style={{ background: '#EF4444' }}>
+                      {rechazando
+                        ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        : 'Sí, rechazar'}
                     </button>
                   </div>
                 </div>

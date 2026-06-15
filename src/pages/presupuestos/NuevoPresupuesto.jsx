@@ -9,7 +9,8 @@ import { usePlan, LIMITES, tieneFeature } from '../../lib/PlanContext'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
-const ITEM_VACIO = { tipo: 'mano_obra', descripcion: '', unidad: 'global', cantidad: 1, precio_unit: 0 }
+const ITEM_VACIO   = { tipo: 'mano_obra', descripcion: '', unidad: 'global', cantidad: 1, precio_unit: 0 }
+const SECCION_VACIA = { tipo: 'seccion', descripcion: '', unidad: '', cantidad: 0, precio_unit: 0 }
 
 export default function NuevoPresupuesto() {
   const navigate = useNavigate()
@@ -129,6 +130,8 @@ export default function NuevoPresupuesto() {
 
   const totalMat = items.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
   const totalMO  = items.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
+
+  function addSeccion() { setItems(prev => [...prev, { ...SECCION_VACIA }]) }
   const total    = totalMat + totalMO
   const margen   = total - totalMat
 
@@ -158,6 +161,7 @@ export default function NuevoPresupuesto() {
       const filtrados = items.filter(i => i.descripcion.trim())
       const totalMat2 = filtrados.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
       const totalMO2  = filtrados.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
+      // secciones no aportan al total
       const total2    = totalMat2 + totalMO2
       const fechaVence = vigencia
         ? new Date(Date.now() + vigencia * 86400000).toISOString().split('T')[0] : null
@@ -171,9 +175,11 @@ export default function NuevoPresupuesto() {
       await supabase.from('presupuesto_items').insert(
         filtrados.map((it, i) => ({
           presupuesto_id: editarId,
-          tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad,
-          cantidad: it.cantidad, precio_unit: it.precio_unit,
-          subtotal: it.cantidad * it.precio_unit, orden: i,
+          tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad || '',
+          cantidad: it.tipo === 'seccion' ? 0 : it.cantidad,
+          precio_unit: it.tipo === 'seccion' ? 0 : it.precio_unit,
+          subtotal: it.tipo === 'seccion' ? 0 : it.cantidad * it.precio_unit,
+          orden: i,
         }))
       )
       setGuardando(false)
@@ -372,7 +378,28 @@ export default function NuevoPresupuesto() {
             </div>
           </div>
 
-          {items.map((item, idx) => (
+          {items.map((item, idx) => item.tipo === 'seccion' ? (
+            // ── ENCABEZADO DE SECCIÓN ──
+            <div key={idx} className="flex items-center gap-2">
+              <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+                style={{ background: 'rgba(168,85,247,.1)', border: '1px solid rgba(168,85,247,.3)' }}>
+                <span className="text-[11px] font-bold" style={{ color: '#A855F7' }}>📌</span>
+                <input
+                  value={item.descripcion}
+                  onChange={e => setItem(idx, 'descripcion', e.target.value)}
+                  placeholder="Nombre de la etapa..."
+                  className="bg-transparent outline-none text-[13px] font-bold w-40"
+                  style={{ color: '#A855F7' }}
+                />
+              </div>
+              <button onClick={() => removeItem(idx)} className="text-red-500/50">
+                <Trash2 size={14} />
+              </button>
+              <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
+            </div>
+          ) : (
+            // ── ÍTEM NORMAL ──
             <div key={idx} className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex gap-2">
@@ -428,16 +455,21 @@ export default function NuevoPresupuesto() {
             </div>
           ))}
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button onClick={() => addItem('material')}
-              className="flex-1 py-3 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
               style={{ background: 'rgba(59,130,246,.12)', color: '#3B82F6', border: '1px dashed rgba(59,130,246,.3)' }}>
-              <Plus size={16} /> Material
+              <Plus size={14} /> Material
             </button>
             <button onClick={() => addItem('mano_obra')}
-              className="flex-1 py-3 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
               style={{ background: 'rgba(249,115,22,.12)', color: '#F97316', border: '1px dashed rgba(249,115,22,.3)' }}>
-              <Plus size={16} /> Mano de obra
+              <Plus size={14} /> M. obra
+            </button>
+            <button onClick={addSeccion}
+              className="flex-1 py-3 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
+              style={{ background: 'rgba(168,85,247,.1)', color: '#A855F7', border: '1px dashed rgba(168,85,247,.3)' }}>
+              <Plus size={14} /> Etapa
             </button>
           </div>
 

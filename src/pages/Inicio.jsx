@@ -32,7 +32,7 @@ const DOT = { pendiente: '#F97316', confirmada: '#22C55E', cancelada: '#EF4444' 
 export default function Inicio() {
   const navigate = useNavigate()
   const { perfil, user } = useAuth()
-  const { kpis, agenda, embudo, obraDestacada, porVencer, loading } = useKpis()
+  const { kpis, agenda, embudo, obrasEjecucion, porVencer, loading } = useKpis()
 
   const nombreRaw = perfil?.nombre || user?.user_metadata?.full_name || user?.user_metadata?.name || ''
   const nombre = nombreRaw.split(' ')[0] || 'vos'
@@ -191,58 +191,62 @@ export default function Inicio() {
         </div>
       </div>
 
-      {/* obra destacada */}
-      {obraDestacada && (
+      {/* obras activas */}
+      {obrasEjecucion.length > 0 && (
         <div className="mx-4 mb-5 rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span style={{ color: '#F97316' }}>⚙</span>
-              <span className="font-semibold text-[12px] tracking-wider" style={{ color: '#F97316' }}>OBRA EN EJECUCIÓN</span>
+              <span className="font-semibold text-[12px] tracking-wider" style={{ color: '#F97316' }}>
+                OBRAS ACTIVAS ({obrasEjecucion.length})
+              </span>
             </div>
+            <button onClick={() => navigate('/obras')} className="text-[12px]" style={{ color: '#3B82F6' }}>Ver todas ›</button>
           </div>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative shrink-0">
-              <CircleProgress
-                pct={obraDestacada.total > 0 ? Math.round((obraDestacada.cobrado / obraDestacada.total) * 100) : 0}
-                size={80} stroke={6} color="#F97316"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-white font-bold text-[16px]">
-                  {obraDestacada.total > 0 ? Math.round((obraDestacada.cobrado / obraDestacada.total) * 100) : 0}%
-                </span>
-                <span className="text-gray-500 text-[9px]">Cobrado</span>
-              </div>
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-bold text-[15px] leading-tight">{obraDestacada.nombre}</p>
-              <div className="flex gap-3 mt-2">
-                <div>
-                  <p className="text-gray-500 text-[9px]">Total obra</p>
-                  <p className="text-white font-bold text-[13px]">{fmt(obraDestacada.total)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-[9px]">Cobrado</p>
-                  <p className="font-bold text-[13px]" style={{ color: '#22C55E' }}>{fmt(obraDestacada.cobrado)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-[9px]">Saldo</p>
-                  <p className="font-bold text-[13px]" style={{ color: '#F97316' }}>{fmt(obraDestacada.pendiente)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 gap-2 pt-3" style={{ borderTop: '1px solid #1E1E2E' }}>
-            {[
-              { l: 'Ganancia neta',    v: fmt(obraDestacada.ganancia_neta), c: '#22C55E' },
-              { l: 'Gastos',           v: fmt(obraDestacada.gastos),        c: '#F97316' },
-              { l: 'Horas trabajadas', v: `${obraDestacada.horas || 0}h`,   c: '#3B82F6' },
-              { l: 'Valor hora',       v: fmt(obraDestacada.valor_hora),    c: '#A855F7' },
-            ].map(m => (
-              <div key={m.l} className="text-center">
-                <p className="font-bold text-[12px]" style={{ color: m.c }}>{m.v}</p>
-                <p className="text-gray-500 text-[9px] leading-tight">{m.l}</p>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3">
+            {obrasEjecucion.map((o, i) => {
+              const pct = o.total > 0 ? Math.round((o.cobrado / o.total) * 100) : 0
+              const statusColor = o.status === 'en_ejecucion' ? '#F97316' : '#A855F7'
+              const statusLabel = o.status === 'en_ejecucion' ? 'En ejecución' : 'Pend. cobro'
+              return (
+                <button key={o.id || i} onClick={() => navigate(`/obras/${o.id}`)}
+                  className="w-full text-left"
+                  style={i < obrasEjecucion.length - 1 ? { borderBottom: '1px solid #1E1E2E', paddingBottom: 12 } : {}}>
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <CircleProgress pct={pct} size={54} stroke={5} color={statusColor} />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-white font-bold text-[11px]">{pct}%</span>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-white font-bold text-[13px] truncate">{o.nombre}</p>
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+                          style={{ background: statusColor + '22', color: statusColor }}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="flex gap-3">
+                        <div>
+                          <p className="text-gray-500 text-[9px]">Total</p>
+                          <p className="text-white font-semibold text-[11px]">{fmt(o.total)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-[9px]">Cobrado</p>
+                          <p className="font-semibold text-[11px]" style={{ color: '#22C55E' }}>{fmt(o.cobrado)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-[9px]">Saldo</p>
+                          <p className="font-semibold text-[11px]" style={{ color: '#F97316' }}>{fmt(o.pendiente)}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight size={14} className="text-gray-600 shrink-0" />
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}

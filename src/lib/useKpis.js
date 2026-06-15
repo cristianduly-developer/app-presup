@@ -4,7 +4,7 @@ import { supabase } from './supabase'
 export function useKpis() {
   const [kpis, setKpis] = useState({ facturado: 0, cobrado: 0, pendiente: 0, ganancia: 0, obrasActivas: 0 })
   const [agenda, setAgenda] = useState([])
-  const [obraDestacada, setObraDestacada] = useState(null)
+  const [obrasEjecucion, setObrasEjecucion] = useState([])
   const [embudo, setEmbudo] = useState([])
   const [porVencer, setPorVencer] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,15 +49,15 @@ export function useKpis() {
       monto: obrasList.filter(o => o.status === e.status).reduce((s, o) => s + o.total, 0),
     }))
 
-    const destacada = obrasList.find(o => o.status === 'en_ejecucion') || null
+    const activas = obrasList.filter(o => ['en_ejecucion', 'pendiente_cobro'].includes(o.status))
 
-    setKpis({ facturado, cobrado, pendiente, ganancia, obrasActivas: obrasList.filter(o => o.status === 'en_ejecucion').length })
+    setKpis({ facturado, cobrado, pendiente, ganancia, obrasActivas: activas.length })
     setAgenda(visitas || [])
     setEmbudo(embudoData)
-    setObraDestacada(destacada)
+    setObrasEjecucion(activas)
     setPorVencer(vencen || [])
     setLoading(false)
   }
 
-  return { kpis, agenda, embudo, obraDestacada, porVencer, loading, cargar }
+  return { kpis, agenda, embudo, obrasEjecucion, porVencer, loading, cargar }
 }

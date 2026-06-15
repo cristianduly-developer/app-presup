@@ -86,6 +86,11 @@ export function usePresupuestoPublico(token) {
       })
   }, [token])
 
+  async function rechazar() {
+    const { data: result } = await supabase.rpc('rechazar_presupuesto', { p_token: token })
+    return result
+  }
+
   async function aceptar(firma = {}) {
     const { data: result } = await supabase.rpc('aceptar_presupuesto', { p_token: token })
     if (result?.ok && firma.firma_imagen) {
@@ -100,5 +105,5 @@ export function usePresupuestoPublico(token) {
     return result
   }
 
-  return { data, loading, error, aceptar }
+  return { data, loading, error, aceptar, rechazar }
 }

@@ -163,7 +163,13 @@ export default function PdfPresupuesto() {
               </tr>
             </thead>
             <tbody>
-              {items.map((item, i) => (
+              {items.map((item, i) => item.tipo === 'seccion' ? (
+                <tr key={i}>
+                  <td colSpan={4} style={{ ...s.td, background: '#F5F3FF', paddingTop: 12, paddingBottom: 6, borderBottom: '1px solid #DDD6FE' }}>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#7C3AED' }}>📌 {item.descripcion}</div>
+                  </td>
+                </tr>
+              ) : (
                 <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                   <td style={s.td}>
                     <div>{item.descripcion}</div>
