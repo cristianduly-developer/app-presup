@@ -95,7 +95,7 @@ export default function LinkPublico() {
 
   const cobrado = p.cobrado || 0
   const pct = p.total > 0 ? Math.round((cobrado / p.total) * 100) : 0
-  const vencido = p.fecha_vence && new Date(p.fecha_vence) < new Date()
+  const vencido = p.fecha_vence && new Date(p.fecha_vence + 'T23:59:59') < new Date()
   const prof = { nombre: p.prof_nombre, oficio: p.prof_oficio, logo_url: p.prof_logo, telefono: p.prof_telefono }
 
   async function confirmarRechazar() {
