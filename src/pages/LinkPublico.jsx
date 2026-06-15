@@ -1,5 +1,5 @@
-import { useParams, useSearchParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePresupuestoPublico } from '../lib/usePresupuestos'
 import CircleProgress from '../components/ui/CircleProgress'
 
@@ -7,25 +7,72 @@ function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
 export default function LinkPublico() {
   const { token } = useParams()
-  const [searchParams] = useSearchParams()
-  const printMode = searchParams.get('print') === '1'
   const { data: p, loading, error, aceptar } = usePresupuestoPublico(token)
   const [aceptando, setAceptando] = useState(false)
   const [aceptado, setAceptado] = useState(false)
   const [errAceptar, setErrAceptar] = useState('')
-  const [confirmar, setConfirmar] = useState(false)
+  const [showFirma, setShowFirma] = useState(false)
 
-  useEffect(() => {
-    if (!loading && p && printMode) {
-      setTimeout(() => window.print(), 600)
+  // canvas firma
+  const canvasRef = useRef(null)
+  const dibujando = useRef(false)
+  const [hasDrawn, setHasDrawn] = useState(false)
+  const lastPos = useRef({ x: 0, y: 0 })
+
+  const getPos = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect()
+    const src = e.touches ? e.touches[0] : e
+    return {
+      x: (src.clientX - rect.left) * (canvas.width / rect.width),
+      y: (src.clientY - rect.top) * (canvas.height / rect.height),
     }
-  }, [loading, p, printMode])
+  }
 
-  async function handleAceptar() {
+  const iniciarTrazo = useCallback(e => {
+    e.preventDefault()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    dibujando.current = true
+    lastPos.current = getPos(e, canvas)
+  }, [])
+
+  const trazar = useCallback(e => {
+    e.preventDefault()
+    if (!dibujando.current) return
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    const pos = getPos(e, canvas)
+    ctx.beginPath()
+    ctx.moveTo(lastPos.current.x, lastPos.current.y)
+    ctx.lineTo(pos.x, pos.y)
+    ctx.strokeStyle = '#1a1a1a'
+    ctx.lineWidth = 2.5
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+    lastPos.current = pos
+    if (!hasDrawn) setHasDrawn(true)
+  }, [hasDrawn])
+
+  const terminarTrazo = useCallback(() => { dibujando.current = false }, [])
+
+  function limpiarFirma() {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    setHasDrawn(false)
+  }
+
+  async function confirmarFirma() {
+    if (!hasDrawn) return
     setAceptando(true)
-    const result = await aceptar()
+    setErrAceptar('')
+    const canvas = canvasRef.current
+    const firmaBase64 = canvas.toDataURL('image/png')
+    const nombreCliente = p.clientes?.nombre || ''
+    const result = await aceptar({ firma_imagen: firmaBase64, firma_nombre: nombreCliente })
     if (result?.ok) setAceptado(true)
-    else setErrAceptar(result?.error || 'Error al aceptar')
+    else setErrAceptar(result?.error || 'Error al aceptar. Intentá de nuevo.')
     setAceptando(false)
   }
 
@@ -46,7 +93,7 @@ export default function LinkPublico() {
   const cobrado = p.cobrado || 0
   const pct = p.total > 0 ? Math.round((cobrado / p.total) * 100) : 0
   const vencido = p.fecha_vence && new Date(p.fecha_vence) < new Date()
-  const prof = { nombre: p.prof_nombre, oficio: p.prof_oficio, logo_url: p.prof_logo }
+  const prof = { nombre: p.prof_nombre, oficio: p.prof_oficio, logo_url: p.prof_logo, telefono: p.prof_telefono }
 
   if (aceptado) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6" style={{ background: '#0D0D14' }}>
@@ -57,7 +104,7 @@ export default function LinkPublico() {
         {prof?.nombre} fue notificado y se pondrá en contacto para coordinar la fecha de inicio.
       </p>
       {prof?.telefono && (
-        <a href={`https://wa.me/${prof.telefono.replace(/\D/g, '')}`}
+        <a href={`https://wa.me/${prof.telefono.replace(/\D/g,'')}`}
           className="w-full max-w-sm py-4 rounded-2xl text-white font-bold text-center"
           style={{ background: '#22C55E' }}>
           💬 Contactar por WhatsApp
@@ -120,8 +167,7 @@ export default function LinkPublico() {
             <span className="text-[12px]" style={{ color: vencido ? '#EF4444' : '#3B82F6' }}>
               {vencido
                 ? 'Este presupuesto expiró. Contactá al profesional para actualizar precios.'
-                : `Válido hasta el ${new Date(p.fecha_vence).toLocaleDateString('es-AR')}`
-              }
+                : `Válido hasta el ${new Date(p.fecha_vence).toLocaleDateString('es-AR')}`}
             </span>
           </div>
         )}
@@ -143,33 +189,81 @@ export default function LinkPublico() {
           </div>
         </div>
 
-        {/* botón aceptar */}
+        {/* botón aceptar / panel firma */}
         {p.status === 'enviado' && !vencido && (
           <>
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
-            {!confirmar ? (
-              <button onClick={() => setConfirmar(true)}
+
+            {!showFirma ? (
+              <button onClick={() => setShowFirma(true)}
                 className="w-full py-5 rounded-2xl text-white font-bold text-[17px]"
                 style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
                 ✅ ACEPTAR PRESUPUESTO
               </button>
             ) : (
-              <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: 'rgba(34,197,94,.1)', border: '1px solid rgba(34,197,94,.3)' }}>
-                <p className="text-white font-bold text-center text-[15px]">¿Confirmás la aceptación?</p>
-                <p className="text-gray-400 text-[12px] text-center">Esta acción no se puede deshacer. {prof?.nombre} coordinará el inicio del trabajo.</p>
+              <div className="rounded-2xl p-5 flex flex-col gap-4"
+                style={{ background: '#161622', border: '1px solid rgba(34,197,94,.3)' }}>
+
+                <p className="text-white font-bold text-[16px] text-center">Confirmación de aceptación</p>
+
+                {/* nombre precargado */}
+                <div>
+                  <p className="text-gray-500 text-[11px] mb-1.5">Nombre del cliente</p>
+                  <div className="rounded-xl px-4 py-3 text-white text-[14px] font-semibold"
+                    style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                    {p.clientes?.nombre || 'Cliente'}
+                  </div>
+                </div>
+
+                {/* canvas firma */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-gray-500 text-[11px]">Firma</p>
+                    {hasDrawn && (
+                      <button onClick={limpiarFirma} className="text-[11px]" style={{ color: '#EF4444' }}>
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                  <div className="rounded-xl overflow-hidden" style={{ background: '#fff', border: '2px solid #2A2A3A' }}>
+                    <canvas
+                      ref={canvasRef}
+                      width={600}
+                      height={200}
+                      style={{ width: '100%', height: 160, touchAction: 'none', display: 'block' }}
+                      onMouseDown={iniciarTrazo}
+                      onMouseMove={trazar}
+                      onMouseUp={terminarTrazo}
+                      onMouseLeave={terminarTrazo}
+                      onTouchStart={iniciarTrazo}
+                      onTouchMove={trazar}
+                      onTouchEnd={terminarTrazo}
+                    />
+                  </div>
+                  {!hasDrawn && (
+                    <p className="text-gray-600 text-[11px] text-center mt-1.5">
+                      ✍️ Firmá con el dedo en el recuadro blanco
+                    </p>
+                  )}
+                </div>
+
+                {/* texto legal */}
+                <p className="text-gray-600 text-[10px] text-center leading-relaxed">
+                  Al confirmar, {p.clientes?.nombre || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Esta acción queda registrada con fecha y hora.
+                </p>
+
                 <div className="flex gap-3">
-                  <button onClick={() => setConfirmar(false)}
+                  <button onClick={() => { setShowFirma(false); limpiarFirma() }}
                     className="flex-1 py-3 rounded-xl text-gray-400 font-semibold text-[14px]"
-                    style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+                    style={{ background: '#0D0D14', border: '1px solid #1E1E2E' }}>
                     Cancelar
                   </button>
-                  <button onClick={handleAceptar} disabled={aceptando}
-                    className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] flex items-center justify-center"
+                  <button onClick={confirmarFirma} disabled={!hasDrawn || aceptando}
+                    className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] flex items-center justify-center disabled:opacity-40"
                     style={{ background: '#22C55E' }}>
                     {aceptando
                       ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      : 'Sí, aceptar'
-                    }
+                      : '✓ Confirmar'}
                   </button>
                 </div>
               </div>
@@ -178,9 +272,10 @@ export default function LinkPublico() {
         )}
 
         {p.status === 'aprobado' && (
-          <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(34,197,94,.1)', border: '1px solid rgba(34,197,94,.3)' }}>
-            <p className="text-green-400 font-bold">✅ Presupuesto ya aceptado</p>
-            <p className="text-gray-500 text-[12px] mt-1">Aceptado el {new Date(p.fecha_aprobado).toLocaleDateString('es-AR')}</p>
+          <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(34,197,94,.1)', border: '1px solid rgba(34,197,94,.3)' }}>
+            <p className="text-green-400 font-bold text-[15px]">✅ Presupuesto aceptado</p>
+            {p.firma_nombre && <p className="text-gray-400 text-[12px] mt-1">Firmado por {p.firma_nombre}</p>}
+            {p.firma_fecha && <p className="text-gray-500 text-[11px]">{new Date(p.firma_fecha).toLocaleString('es-AR')}</p>}
           </div>
         )}
       </div>

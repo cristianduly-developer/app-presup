@@ -210,6 +210,34 @@ export default function PdfPresupuesto() {
           </div>
         )}
 
+        {/* FIRMA */}
+        {p.firma_imagen && (
+          <div style={{ ...s.section, marginBottom: 32 }}>
+            <div style={s.sectionTitle}>Firma del cliente</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 40 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 8, background: '#fafafa', display: 'inline-block' }}>
+                  <img src={p.firma_imagen} alt="Firma" style={{ height: 80, maxWidth: 280, display: 'block' }} />
+                </div>
+                <div style={{ marginTop: 6, borderTop: '1px solid #ccc', paddingTop: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{p.firma_nombre || p.clientes?.nombre || 'Cliente'}</div>
+                  {p.firma_fecha && (
+                    <div style={{ fontSize: 10, color: '#888' }}>
+                      Firmado digitalmente el {new Date(p.firma_fecha).toLocaleString('es-AR')}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'right' }}>
+                <div style={{ borderTop: '1px solid #ccc', paddingTop: 4, display: 'inline-block', minWidth: 200 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{perfil?.nombre || ''}</div>
+                  <div style={{ fontSize: 10, color: '#888' }}>Profesional</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* FOOTER */}
         <div style={s.footer}>
           <div style={s.validez}>

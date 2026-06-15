@@ -86,8 +86,17 @@ export function usePresupuestoPublico(token) {
       })
   }, [token])
 
-  async function aceptar() {
+  async function aceptar(firma = {}) {
     const { data: result } = await supabase.rpc('aceptar_presupuesto', { p_token: token })
+    if (result?.ok && firma.firma_imagen) {
+      await supabase.from('presupuestos')
+        .update({
+          firma_imagen: firma.firma_imagen,
+          firma_nombre: firma.firma_nombre || '',
+          firma_fecha:  new Date().toISOString(),
+        })
+        .eq('token_publico', token)
+    }
     return result
   }
 
