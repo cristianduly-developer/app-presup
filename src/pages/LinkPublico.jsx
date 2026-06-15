@@ -194,77 +194,82 @@ export default function LinkPublico() {
           <>
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
 
-            {!showFirma ? (
-              <button onClick={() => setShowFirma(true)}
-                className="w-full py-5 rounded-2xl text-white font-bold text-[17px]"
-                style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
-                ✅ ACEPTAR PRESUPUESTO
-              </button>
-            ) : (
-              <div className="rounded-2xl p-5 flex flex-col gap-4"
-                style={{ background: '#161622', border: '1px solid rgba(34,197,94,.3)' }}>
+            <button onClick={() => setShowFirma(true)}
+              className="w-full py-5 rounded-2xl text-white font-bold text-[17px]"
+              style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
+              ✅ ACEPTAR PRESUPUESTO
+            </button>
 
-                <p className="text-white font-bold text-[16px] text-center">Confirmación de aceptación</p>
+            {/* bottom sheet firma */}
+            {showFirma && (
+              <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: 'rgba(0,0,0,.6)' }}
+                onClick={() => { setShowFirma(false); limpiarFirma() }}>
+                <div className="rounded-t-3xl p-5 flex flex-col gap-4 w-full max-w-lg mx-auto"
+                  style={{ background: '#161622' }}
+                  onClick={e => e.stopPropagation()}>
 
-                {/* nombre precargado */}
-                <div>
-                  <p className="text-gray-500 text-[11px] mb-1.5">Nombre del cliente</p>
-                  <div className="rounded-xl px-4 py-3 text-white text-[14px] font-semibold"
-                    style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
-                    {p.clientes?.nombre || 'Cliente'}
+                  <div className="w-10 h-1 rounded-full mx-auto" style={{ background: '#2A2A3A' }} />
+                  <p className="text-white font-bold text-[16px] text-center">Confirmación de aceptación</p>
+
+                  {/* nombre precargado */}
+                  <div>
+                    <p className="text-gray-500 text-[11px] mb-1.5">Nombre del cliente</p>
+                    <div className="rounded-xl px-4 py-3 text-white text-[14px] font-semibold"
+                      style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                      {p.clientes?.nombre || 'Cliente'}
+                    </div>
                   </div>
-                </div>
 
-                {/* canvas firma */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-gray-500 text-[11px]">Firma</p>
-                    {hasDrawn && (
-                      <button onClick={limpiarFirma} className="text-[11px]" style={{ color: '#EF4444' }}>
-                        Limpiar
-                      </button>
-                    )}
+                  {/* canvas firma */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-gray-500 text-[11px]">Firma con el dedo</p>
+                      {hasDrawn && (
+                        <button onClick={limpiarFirma} className="text-[11px]" style={{ color: '#EF4444' }}>
+                          Limpiar
+                        </button>
+                      )}
+                    </div>
+                    <div className="rounded-xl overflow-hidden relative" style={{ background: '#fff', border: '2px solid #3B82F6' }}>
+                      <canvas
+                        ref={canvasRef}
+                        width={600}
+                        height={180}
+                        style={{ width: '100%', height: 140, touchAction: 'none', display: 'block' }}
+                        onMouseDown={iniciarTrazo}
+                        onMouseMove={trazar}
+                        onMouseUp={terminarTrazo}
+                        onMouseLeave={terminarTrazo}
+                        onTouchStart={iniciarTrazo}
+                        onTouchMove={trazar}
+                        onTouchEnd={terminarTrazo}
+                      />
+                      {!hasDrawn && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <p style={{ color: '#bbb', fontSize: 13 }}>✍️ Firmá acá</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="rounded-xl overflow-hidden" style={{ background: '#fff', border: '2px solid #2A2A3A' }}>
-                    <canvas
-                      ref={canvasRef}
-                      width={600}
-                      height={200}
-                      style={{ width: '100%', height: 160, touchAction: 'none', display: 'block' }}
-                      onMouseDown={iniciarTrazo}
-                      onMouseMove={trazar}
-                      onMouseUp={terminarTrazo}
-                      onMouseLeave={terminarTrazo}
-                      onTouchStart={iniciarTrazo}
-                      onTouchMove={trazar}
-                      onTouchEnd={terminarTrazo}
-                    />
+
+                  <p className="text-gray-600 text-[10px] text-center leading-relaxed">
+                    Al confirmar, {p.clientes?.nombre || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Queda registrado con fecha y hora.
+                  </p>
+
+                  <div className="flex gap-3 pb-2">
+                    <button onClick={() => { setShowFirma(false); limpiarFirma() }}
+                      className="flex-1 py-3 rounded-xl text-gray-400 font-semibold text-[14px]"
+                      style={{ background: '#0D0D14', border: '1px solid #1E1E2E' }}>
+                      Cancelar
+                    </button>
+                    <button onClick={confirmarFirma} disabled={!hasDrawn || aceptando}
+                      className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] flex items-center justify-center disabled:opacity-40"
+                      style={{ background: '#22C55E' }}>
+                      {aceptando
+                        ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        : '✓ Confirmar'}
+                    </button>
                   </div>
-                  {!hasDrawn && (
-                    <p className="text-gray-600 text-[11px] text-center mt-1.5">
-                      ✍️ Firmá con el dedo en el recuadro blanco
-                    </p>
-                  )}
-                </div>
-
-                {/* texto legal */}
-                <p className="text-gray-600 text-[10px] text-center leading-relaxed">
-                  Al confirmar, {p.clientes?.nombre || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Esta acción queda registrada con fecha y hora.
-                </p>
-
-                <div className="flex gap-3">
-                  <button onClick={() => { setShowFirma(false); limpiarFirma() }}
-                    className="flex-1 py-3 rounded-xl text-gray-400 font-semibold text-[14px]"
-                    style={{ background: '#0D0D14', border: '1px solid #1E1E2E' }}>
-                    Cancelar
-                  </button>
-                  <button onClick={confirmarFirma} disabled={!hasDrawn || aceptando}
-                    className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] flex items-center justify-center disabled:opacity-40"
-                    style={{ background: '#22C55E' }}>
-                    {aceptando
-                      ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      : '✓ Confirmar'}
-                  </button>
                 </div>
               </div>
             )}
