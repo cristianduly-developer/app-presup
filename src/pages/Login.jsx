@@ -8,13 +8,15 @@ export default function Login() {
   async function loginGoogle() {
     setLoading(true)
     setError('')
-    const { error: err } = await supabase.auth.signInWithOAuth({
+    const { data, error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
+        skipBrowserRedirect: true,
       },
     })
-    if (err) { setError(err.message); setLoading(false) }
+    if (err) { setError(err.message); setLoading(false); return }
+    if (data?.url) window.location.href = data.url
   }
 
   return (
