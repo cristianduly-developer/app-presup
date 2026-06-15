@@ -50,13 +50,25 @@ export default function DetallePresupuesto() {
     if (!p?.clientes?.telefono) return
     const d = p.clientes.telefono.replace(/\D/g, '')
     const tel = d.startsWith('54') ? d : d.startsWith('0') ? '54' + d.slice(1) : '54' + d
-    const url = `${window.location.origin}/p/${p.token_publico}`
-    const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
-    window.open(`https://wa.me/${tel}?text=${msg}`)
+
+    // asegurar que exista token_publico
+    let token = p.token_publico
+    if (!token) {
+      const nuevoToken = crypto.randomUUID()
+      await supabase.from('presupuestos').update({ token_publico: nuevoToken }).eq('id', id)
+      token = nuevoToken
+      setP(prev => ({ ...prev, token_publico: nuevoToken }))
+    }
+
+    const updates = { status: 'enviado', fecha_envio: new Date().toISOString().split('T')[0] }
     if (p.status === 'borrador') {
-      await supabase.from('presupuestos').update({ status: 'enviado', fecha_envio: new Date().toISOString().split('T')[0] }).eq('id', id)
+      await supabase.from('presupuestos').update(updates).eq('id', id)
       cargar()
     }
+
+    const url = `${window.location.origin}/p/${token}`
+    const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
+    window.open(`https://wa.me/${tel}?text=${msg}`)
   }
 
   async function registrarPago() {
