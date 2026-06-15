@@ -186,20 +186,34 @@ export default function LinkPublico() {
         </div>
 
         {/* vigencia */}
-        {p.fecha_vence && (
-          <div className="rounded-xl px-4 py-3 flex items-center gap-2"
-            style={{
-              background: vencido ? 'rgba(239,68,68,.1)' : 'rgba(59,130,246,.1)',
-              border: `1px solid ${vencido ? 'rgba(239,68,68,.3)' : 'rgba(59,130,246,.3)'}`,
-            }}>
-            <span>{vencido ? '⏰' : '📅'}</span>
-            <span className="text-[12px]" style={{ color: vencido ? '#EF4444' : '#3B82F6' }}>
-              {vencido
-                ? 'Este presupuesto expiró. Contactá al profesional para actualizar precios.'
-                : `Válido hasta el ${new Date(p.fecha_vence).toLocaleDateString('es-AR')}`}
-            </span>
-          </div>
-        )}
+        {p.fecha_vence && (() => {
+          const hoy = new Date(); hoy.setHours(0,0,0,0)
+          const vence = new Date(p.fecha_vence + 'T00:00:00')
+          const diasRestantes = Math.ceil((vence - hoy) / 86400000)
+          const urgente = !vencido && diasRestantes <= 2
+          const color = vencido ? '#EF4444' : urgente ? '#F97316' : '#3B82F6'
+          const bgColor = vencido ? 'rgba(239,68,68,.1)' : urgente ? 'rgba(249,115,22,.1)' : 'rgba(59,130,246,.1)'
+          const borderColor = vencido ? 'rgba(239,68,68,.3)' : urgente ? 'rgba(249,115,22,.3)' : 'rgba(59,130,246,.3)'
+          return (
+            <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-2"
+              style={{ background: bgColor, border: `1px solid ${borderColor}` }}>
+              <div className="flex items-center gap-2">
+                <span>{vencido ? '⏰' : urgente ? '⚠️' : '📅'}</span>
+                <span className="text-[12px]" style={{ color }}>
+                  {vencido
+                    ? 'Este presupuesto expiró. Contactá al profesional.'
+                    : `Válido hasta el ${vence.toLocaleDateString('es-AR')}`}
+                </span>
+              </div>
+              {!vencido && (
+                <span className="text-[11px] font-bold shrink-0 px-2 py-0.5 rounded-full"
+                  style={{ background: color + '22', color }}>
+                  {diasRestantes === 0 ? '¡Hoy vence!' : diasRestantes === 1 ? 'Queda 1 día' : `Quedan ${diasRestantes} días`}
+                </span>
+              )}
+            </div>
+          )
+        })()}
 
         {/* ítems */}
         <div className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>

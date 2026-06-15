@@ -4,7 +4,7 @@ import { Search, Plus, RefreshCw, X } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
 import { usePresupuestos } from '../../lib/usePresupuestos'
 
-const FILTROS = ['Todos', 'Borrador', 'Enviado', 'Aprobado', 'Rechazado', 'Vencido']
+const FILTROS = ['Pendientes', 'Todos', 'Borrador', 'Enviado', 'Aprobado', 'Rechazado', 'Vencido']
 
 const STATUS_STYLE = {
   enviado:   { label: 'Enviado',   bg: 'rgba(59,130,246,.15)',  color: '#3B82F6' },
@@ -25,14 +25,27 @@ function waMe(tel) {
 }
 
 export default function Presupuestos() {
-  const [filtro, setFiltro] = useState('Todos')
+  const [filtro, setFiltro] = useState('Pendientes')
   const [busqueda, setBusqueda] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const navigate = useNavigate()
   const { presupuestos, loading, cargar, crear } = usePresupuestos()
 
+  const STATUS_ORDEN = { enviado: 0, borrador: 1, aprobado: 2, rechazado: 3, vencido: 4 }
   const lista = presupuestos
-    .filter(p => filtro === 'Todos' || p.status === filtro.toLowerCase())
+    .filter(p => {
+      if (filtro === 'Todos') return true
+      if (filtro === 'Pendientes') return ['enviado', 'borrador'].includes(p.status)
+      return p.status === filtro.toLowerCase()
+    })
+    .sort((a, b) => {
+      if (filtro === 'Pendientes' || filtro === 'Todos') {
+        const da = STATUS_ORDEN[a.status] ?? 5
+        const db = STATUS_ORDEN[b.status] ?? 5
+        if (da !== db) return da - db
+      }
+      return new Date(b.created_at) - new Date(a.created_at)
+    })
     .filter(p => {
       if (!busqueda.trim()) return true
       const q = busqueda.toLowerCase()

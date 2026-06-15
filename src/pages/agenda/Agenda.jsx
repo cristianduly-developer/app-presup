@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Phone, MessageCircle, MapPin, Plus, X, Check, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
+import { Phone, MessageCircle, MapPin, Plus, X, Check, ChevronLeft, ChevronRight, Pencil, UserPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
 import { useClientes } from '../../lib/useClientes'
@@ -21,7 +21,7 @@ function fmtDia(date) {
 
 export default function Agenda() {
   const { user } = useAuth()
-  const { clientes } = useClientes()
+  const { clientes, crear: crearCliente } = useClientes()
   const [hoy] = useState(new Date())
   const [semanaOffset, setSemanaOffset] = useState(0)
   const [diaIdx, setDiaIdx] = useState(0)
@@ -33,6 +33,8 @@ export default function Agenda() {
   const [guardando, setGuardando] = useState(false)
   const [guardandoEdit, setGuardandoEdit] = useState(false)
   const [form, setForm] = useState({ cliente_id: '', descripcion: '', direccion: '', hora: '09:00', notas: '' })
+  const [modoCliente, setModoCliente] = useState('existente') // 'existente' | 'nuevo'
+  const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', telefono: '' })
 
   const lunes = addDays(hoy, semanaOffset * 7 - ((hoy.getDay() + 6) % 7))
   const dias = Array.from({ length: 7 }, (_, i) => addDays(lunes, i))
@@ -65,9 +67,14 @@ export default function Agenda() {
   async function guardar() {
     if (!form.descripcion.trim()) return
     setGuardando(true)
+    let clienteId = form.cliente_id || null
+    if (modoCliente === 'nuevo' && nuevoCliente.nombre.trim()) {
+      const { data: nc } = await crearCliente({ nombre: nuevoCliente.nombre.trim(), telefono: nuevoCliente.telefono.trim() })
+      clienteId = nc?.id || null
+    }
     await supabase.from('visitas').insert({
       user_id:     user.id,
-      cliente_id:  form.cliente_id || null,
+      cliente_id:  clienteId,
       descripcion: form.descripcion,
       direccion:   form.direccion,
       hora:        form.hora,
@@ -77,6 +84,8 @@ export default function Agenda() {
     })
     setShowNueva(false)
     setForm({ cliente_id: '', descripcion: '', direccion: '', hora: '09:00', notas: '' })
+    setModoCliente('existente')
+    setNuevoCliente({ nombre: '', telefono: '' })
     setGuardando(false)
     cargar()
   }
@@ -309,13 +318,35 @@ export default function Agenda() {
             </div>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-gray-500 text-[11px] block mb-1">Cliente</label>
-                <select value={form.cliente_id} onChange={e => set('cliente_id', e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none appearance-none"
-                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
-                  <option value="">Sin cliente asignado</option>
-                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-gray-500 text-[11px]">Cliente</label>
+                  <button onClick={() => setModoCliente(m => m === 'nuevo' ? 'existente' : 'nuevo')}
+                    className="flex items-center gap-1 text-[11px] font-semibold"
+                    style={{ color: modoCliente === 'nuevo' ? '#22C55E' : '#3B82F6' }}>
+                    <UserPlus size={12} />
+                    {modoCliente === 'nuevo' ? 'Elegir existente' : 'Nuevo cliente'}
+                  </button>
+                </div>
+                {modoCliente === 'existente' ? (
+                  <select value={form.cliente_id} onChange={e => set('cliente_id', e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none appearance-none"
+                    style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                    <option value="">Sin cliente asignado</option>
+                    {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                  </select>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <input value={nuevoCliente.nombre} onChange={e => setNuevoCliente(n => ({ ...n, nombre: e.target.value }))}
+                      placeholder="Nombre del cliente *"
+                      className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                      style={{ background: '#0D0D14', border: `1px solid ${nuevoCliente.nombre ? '#3B82F6' : '#2A2A3A'}` }} />
+                    <input value={nuevoCliente.telefono} onChange={e => setNuevoCliente(n => ({ ...n, telefono: e.target.value }))}
+                      placeholder="Teléfono (opcional)"
+                      type="tel"
+                      className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                      style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-gray-500 text-[11px] block mb-1">Descripción *</label>
