@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
+import { LIMITES } from './PlanContext'
 
 export function useObras() {
   const [obras, setObras] = useState([])
@@ -17,8 +18,18 @@ export function useObras() {
     setLoading(false)
   }
 
-  async function crear(datos) {
+  async function crear(datos, plan = 'basico') {
     const { data: { user } } = await supabase.auth.getUser()
+    const limite = LIMITES[plan]?.obras ?? 30
+    if (limite !== Infinity) {
+      const { count } = await supabase.from('obras')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .in('status', ['en_ejecucion', 'pendiente_cobro'])
+      if (count >= limite) {
+        return { error: { message: `Tu plan permite hasta ${limite} obras activas. Ya tenés ${count}.`, tipo: 'limite' } }
+      }
+    }
     const { data, error } = await supabase
       .from('obras').insert({ ...datos, user_id: user.id }).select().single()
     if (!error) await cargar()

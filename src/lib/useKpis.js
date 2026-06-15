@@ -6,6 +6,7 @@ export function useKpis() {
   const [agenda, setAgenda] = useState([])
   const [obraDestacada, setObraDestacada] = useState(null)
   const [embudo, setEmbudo] = useState([])
+  const [porVencer, setPorVencer] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { cargar() }, [])
@@ -15,10 +16,16 @@ export function useKpis() {
     const hoy = new Date().toISOString().split('T')[0]
     const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
-    const [{ data: presups }, { data: obras }, { data: visitas }] = await Promise.all([
+    const en3dias = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]
+    const [{ data: presups }, { data: obras }, { data: visitas }, { data: vencen }] = await Promise.all([
       supabase.from('presupuestos').select('total, status, created_at').gte('created_at', inicioMes),
       supabase.from('obras_resumen').select('*'),
       supabase.from('visitas').select('*, clientes(nombre, telefono)').eq('fecha', hoy).order('hora'),
+      supabase.from('presupuestos').select('id, numero, titulo, fecha_vence, clientes(nombre)')
+        .in('status', ['enviado', 'borrador'])
+        .gte('fecha_vence', hoy)
+        .lte('fecha_vence', en3dias)
+        .order('fecha_vence'),
     ])
 
     const facturado = (presups || []).reduce((s, p) => s + (p.total || 0), 0)
@@ -48,8 +55,9 @@ export function useKpis() {
     setAgenda(visitas || [])
     setEmbudo(embudoData)
     setObraDestacada(destacada)
+    setPorVencer(vencen || [])
     setLoading(false)
   }
 
-  return { kpis, agenda, embudo, obraDestacada, loading, cargar }
+  return { kpis, agenda, embudo, obraDestacada, porVencer, loading, cargar }
 }

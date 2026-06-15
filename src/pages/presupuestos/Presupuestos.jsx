@@ -4,15 +4,16 @@ import { Search, Plus, RefreshCw, X } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
 import { usePresupuestos } from '../../lib/usePresupuestos'
 
-const FILTROS = ['Todos', 'Borrador', 'Enviado', 'Aprobado', 'Vencido']
+const FILTROS = ['Todos', 'Borrador', 'Enviado', 'Aprobado', 'Rechazado', 'Vencido']
 
 const STATUS_STYLE = {
-  enviado:  { label: 'Enviado',  bg: 'rgba(59,130,246,.15)', color: '#3B82F6' },
-  aprobado: { label: 'Aprobado', bg: 'rgba(34,197,94,.15)',  color: '#22C55E' },
-  borrador: { label: 'Borrador', bg: 'rgba(107,114,128,.2)', color: '#9CA3AF' },
-  vencido:  { label: 'Vencido',  bg: 'rgba(239,68,68,.15)',  color: '#EF4444' },
+  enviado:   { label: 'Enviado',   bg: 'rgba(59,130,246,.15)',  color: '#3B82F6' },
+  aprobado:  { label: 'Aprobado',  bg: 'rgba(34,197,94,.15)',   color: '#22C55E' },
+  borrador:  { label: 'Borrador',  bg: 'rgba(107,114,128,.2)',  color: '#9CA3AF' },
+  vencido:   { label: 'Vencido',   bg: 'rgba(239,68,68,.15)',   color: '#EF4444' },
+  rechazado: { label: 'Rechazado', bg: 'rgba(239,68,68,.15)',   color: '#EF4444' },
 }
-const STATUS_COLOR = { enviado: '#3B82F6', aprobado: '#22C55E', borrador: '#6B7280', vencido: '#EF4444' }
+const STATUS_COLOR = { enviado: '#3B82F6', aprobado: '#22C55E', borrador: '#6B7280', vencido: '#EF4444', rechazado: '#EF4444' }
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 

@@ -216,9 +216,21 @@ export default function PdfPresupuesto() {
             📅 <strong>Presupuesto válido por {p.vigencia_dias} días</strong>
             {p.fecha_vence && ` · Vence el ${fmtFecha(p.fecha_vence)}`}
           </div>
-          {perfil?.whatsapp_msg === undefined && perfil?.telefono && (
+
+          {/* datos de pago */}
+          {(perfil?.cbu || perfil?.alias_banco) && (
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: 12, color: '#14532D' }}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>💳 Datos para transferencia</div>
+              {perfil.banco && <div>Banco: <strong>{perfil.banco}</strong></div>}
+              {perfil.cbu && <div>CBU: <strong>{perfil.cbu}</strong></div>}
+              {perfil.alias_banco && <div>Alias: <strong>{perfil.alias_banco}</strong></div>}
+              <div style={{ marginTop: 4, color: '#166534' }}>A nombre de: <strong>{perfil.nombre}</strong>{perfil.cuit ? ` · CUIT: ${perfil.cuit}` : ''}</div>
+            </div>
+          )}
+
+          {perfil?.telefono && (
             <div style={{ fontSize: 12, color: '#555', marginBottom: 8 }}>
-              Para aceptar este presupuesto o realizar consultas, contactarse con {perfil?.nombre} al {perfil?.telefono}
+              Consultas: {perfil.nombre} · {perfil.telefono}
             </div>
           )}
           <div style={s.footerText}>

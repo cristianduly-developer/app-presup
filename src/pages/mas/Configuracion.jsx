@@ -21,6 +21,9 @@ export default function Configuracion() {
         ciudad:            perfil.ciudad || '',
         provincia:         perfil.provincia || '',
         cuit:              perfil.cuit || '',
+        cbu:               perfil.cbu || '',
+        alias_banco:       perfil.alias_banco || '',
+        banco:             perfil.banco || '',
         iva:               perfil.condicion_iva || 'monotributista',
         vigencia_default:  perfil.vigencia_default || 5,
         recargo_urgencia:  perfil.recargo_urgencia || 30,
@@ -45,6 +48,9 @@ export default function Configuracion() {
       provincia:        form.provincia,
       cuit:             form.cuit,
       condicion_iva:    form.iva,
+      cbu:              form.cbu,
+      alias_banco:      form.alias_banco,
+      banco:            form.banco,
       vigencia_default: Number(form.vigencia_default),
       recargo_urgencia: Number(form.recargo_urgencia),
       recargo_nocturno: Number(form.recargo_nocturno),
@@ -107,6 +113,12 @@ export default function Configuracion() {
         <Field label="CUIT" value={form.cuit} onChange={v => set('cuit', v)} placeholder="20-12345678-9" />
         <SelectField label="Condición IVA" value={form.iva} onChange={v => set('iva', v)}
           options={[['monotributista','Monotributista'],['responsable_inscripto','Responsable Inscripto'],['exento','Exento'],['consumidor_final','Consumidor Final']]} />
+      </Section>
+
+      <Section title="DATOS BANCARIOS">
+        <Field label="CBU" value={form.cbu} onChange={v => set('cbu', v)} placeholder="0000003100012345678901" />
+        <Field label="Alias" value={form.alias_banco} onChange={v => set('alias_banco', v)} placeholder="MI.ALIAS.BANCO" />
+        <Field label="Banco" value={form.banco} onChange={v => set('banco', v)} placeholder="Banco Nación, Mercado Pago…" />
       </Section>
 
       <Section title="PRESUPUESTOS">

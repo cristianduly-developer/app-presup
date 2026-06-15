@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Phone, ChevronRight } from 'lucide-react'
+import { Phone, ChevronRight, AlertTriangle } from 'lucide-react'
 import CircleProgress from '../components/ui/CircleProgress'
 import { useKpis } from '../lib/useKpis'
 import { useAuth } from '../lib/useAuth'
@@ -32,7 +32,7 @@ const DOT = { pendiente: '#F97316', confirmada: '#22C55E', cancelada: '#EF4444' 
 export default function Inicio() {
   const navigate = useNavigate()
   const { perfil, user } = useAuth()
-  const { kpis, agenda, embudo, obraDestacada, loading } = useKpis()
+  const { kpis, agenda, embudo, obraDestacada, porVencer, loading } = useKpis()
 
   const nombreRaw = perfil?.nombre || user?.user_metadata?.full_name || user?.user_metadata?.name || ''
   const nombre = nombreRaw.split(' ')[0] || 'vos'
@@ -56,6 +56,29 @@ export default function Inicio() {
           <p className="text-gray-500 text-[13px]">{hoyFmt}</p>
         </div>
       </div>
+
+      {/* alerta presupuestos por vencer */}
+      {porVencer.length > 0 && (
+        <div className="mx-4 mb-4 rounded-2xl p-4" style={{ background: 'rgba(249,115,22,.1)', border: '1px solid rgba(249,115,22,.3)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={15} style={{ color: '#F97316' }} />
+            <span className="text-[12px] font-bold" style={{ color: '#F97316' }}>
+              {porVencer.length === 1 ? '1 presupuesto vence en los próximos 3 días' : `${porVencer.length} presupuestos vencen en los próximos 3 días`}
+            </span>
+          </div>
+          {porVencer.map(p => (
+            <button key={p.id} onClick={() => navigate(`/presupuestos/${p.id}`)}
+              className="w-full text-left flex items-center justify-between py-1.5">
+              <span className="text-white text-[12px]">
+                {p.titulo || `Pres. #${p.numero}`}{p.clientes?.nombre ? ` · ${p.clientes.nombre}` : ''}
+              </span>
+              <span className="text-[11px]" style={{ color: '#F97316' }}>
+                Vence {new Date(p.fecha_vence).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 px-4 mb-5">
