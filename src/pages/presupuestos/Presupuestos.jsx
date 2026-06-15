@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Filter, Plus, RefreshCw } from 'lucide-react'
+import { Search, Plus, RefreshCw, X } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
 import { usePresupuestos } from '../../lib/usePresupuestos'
 
@@ -16,14 +16,44 @@ const STATUS_COLOR = { enviado: '#3B82F6', aprobado: '#22C55E', borrador: '#6B72
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
+function waMe(tel) {
+  const d = tel.replace(/\D/g, '')
+  if (d.startsWith('54')) return `https://wa.me/${d}`
+  if (d.startsWith('0')) return `https://wa.me/54${d.slice(1)}`
+  return `https://wa.me/54${d}`
+}
+
 export default function Presupuestos() {
   const [filtro, setFiltro] = useState('Todos')
+  const [busqueda, setBusqueda] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
   const navigate = useNavigate()
-  const { presupuestos, loading, cargar } = usePresupuestos()
+  const { presupuestos, loading, cargar, crear } = usePresupuestos()
 
-  const lista = filtro === 'Todos'
-    ? presupuestos
-    : presupuestos.filter(p => p.status === filtro.toLowerCase())
+  const lista = presupuestos
+    .filter(p => filtro === 'Todos' || p.status === filtro.toLowerCase())
+    .filter(p => {
+      if (!busqueda.trim()) return true
+      const q = busqueda.toLowerCase()
+      return (
+        p.titulo?.toLowerCase().includes(q) ||
+        p.clientes?.nombre?.toLowerCase().includes(q) ||
+        String(p.numero).includes(q)
+      )
+    })
+
+  async function duplicar(e, p) {
+    e.stopPropagation()
+    const items = (p.presupuesto_items || []).map(it => ({
+      tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad,
+      cantidad: it.cantidad, precio_unit: it.precio_unit,
+    }))
+    const { data } = await crear(
+      { titulo: p.titulo ? `Copia de ${p.titulo}` : '', cliente_id: p.cliente_id, vigencia_dias: p.vigencia_dias || 5, notas_internas: p.notas_internas || '', status: 'borrador' },
+      items
+    )
+    if (data?.id) navigate(`/presupuestos/${data.id}`)
+  }
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ background: '#0D0D14' }}>
@@ -31,7 +61,9 @@ export default function Presupuestos() {
         <h1 className="text-white font-bold text-[20px]">Presupuestos</h1>
         <div className="flex gap-3 items-center">
           <button onClick={cargar}><RefreshCw size={18} className="text-gray-400" /></button>
-          <button><Search size={20} className="text-gray-400" /></button>
+          <button onClick={() => { setShowSearch(s => !s); setBusqueda('') }}>
+            <Search size={20} className={showSearch ? 'text-blue-400' : 'text-gray-400'} />
+          </button>
           <button className="w-9 h-9 rounded-full flex items-center justify-center"
             style={{ background: '#3B82F6' }}
             onClick={() => navigate('/presupuestos/nuevo')}>
@@ -39,6 +71,21 @@ export default function Presupuestos() {
           </button>
         </div>
       </div>
+
+      {showSearch && (
+        <div className="mx-4 mb-3 flex items-center gap-2 rounded-2xl px-4 py-3"
+          style={{ background: '#161622', border: '1px solid #3B82F6' }}>
+          <Search size={15} className="text-blue-400 shrink-0" />
+          <input
+            autoFocus
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por trabajo, cliente o número..."
+            className="flex-1 bg-transparent text-white text-[14px] outline-none placeholder-gray-600"
+          />
+          {busqueda && <button onClick={() => setBusqueda('')}><X size={15} className="text-gray-500" /></button>}
+        </div>
+      )}
 
       <div className="flex gap-2 px-4 mb-5 overflow-x-auto pb-1">
         {FILTROS.map(f => (
@@ -103,9 +150,14 @@ export default function Presupuestos() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #1E1E2E' }}>
-                  <Accion label="WhatsApp" bg="rgba(34,197,94,.12)"   color="#22C55E" />
-                  <Accion label="Duplicar"  bg="rgba(59,130,246,.12)" color="#3B82F6" />
-                  <Accion label="Editar"    bg="rgba(107,114,128,.12)" color="#9CA3AF" />
+                  {p.clientes?.telefono && (
+                    <Accion label="WhatsApp" bg="rgba(34,197,94,.12)" color="#22C55E"
+                      href={waMe(p.clientes.telefono)} />
+                  )}
+                  <Accion label="Duplicar"  bg="rgba(59,130,246,.12)" color="#3B82F6"
+                    onClick={e => duplicar(e, p)} />
+                  <Accion label="Editar"    bg="rgba(107,114,128,.12)" color="#9CA3AF"
+                    onClick={e => { e.stopPropagation(); navigate(`/presupuestos/nuevo?editar=${p.id}`) }} />
                   <Accion label="Ver"       bg="rgba(168,85,247,.12)" color="#A855F7"
                     onClick={() => navigate(`/presupuestos/${p.id}`)} />
                 </div>
@@ -118,7 +170,15 @@ export default function Presupuestos() {
   )
 }
 
-function Accion({ label, bg, color, onClick }) {
+function Accion({ label, bg, color, onClick, href }) {
+  if (href) return (
+    <a href={href} target="_blank" rel="noreferrer"
+      className="flex-1 py-2 rounded-xl text-[11px] font-semibold text-center"
+      style={{ background: bg, color }}
+      onClick={e => e.stopPropagation()}>
+      {label}
+    </a>
+  )
   return (
     <button className="flex-1 py-2 rounded-xl text-[11px] font-semibold"
       style={{ background: bg, color }}

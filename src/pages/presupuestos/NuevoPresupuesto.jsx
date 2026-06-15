@@ -96,7 +96,7 @@ export default function NuevoPresupuesto() {
           cantidad: it.cantidad, precio_unit: it.precio_unit,
         })))
       }
-      setStep(2) // en modo edición ir directo a los ítems
+      setStep(1) // en modo edición arrancar desde el paso 1 para permitir editar cliente/vigencia
     }
     cargarEditar()
   }, [editarId])
