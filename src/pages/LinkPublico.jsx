@@ -69,7 +69,7 @@ export default function LinkPublico() {
     setErrAceptar('')
     const canvas = canvasRef.current
     const firmaBase64 = canvas.toDataURL('image/png')
-    const nombreCliente = p.clientes?.nombre || ''
+    const nombreCliente = p.cliente_nombre || p.clientes?.nombre || ''
     const result = await aceptar({ firma_imagen: firmaBase64, firma_nombre: nombreCliente })
     if (result?.ok) setAceptado(true)
     else setErrAceptar(result?.error || 'Error al aceptar. Intentá de nuevo.')
@@ -216,7 +216,7 @@ export default function LinkPublico() {
                     <p className="text-gray-500 text-[11px] mb-1.5">Nombre del cliente</p>
                     <div className="rounded-xl px-4 py-3 text-white text-[14px] font-semibold"
                       style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
-                      {p.clientes?.nombre || 'Cliente'}
+                      {p.cliente_nombre || p.clientes?.nombre || 'Cliente'}
                     </div>
                   </div>
 
@@ -253,7 +253,7 @@ export default function LinkPublico() {
                   </div>
 
                   <p className="text-gray-600 text-[10px] text-center leading-relaxed">
-                    Al confirmar, {p.clientes?.nombre || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Queda registrado con fecha y hora.
+                    Al confirmar, {p.cliente_nombre || p.clientes?.nombre || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Queda registrado con fecha y hora.
                   </p>
 
                   <div className="flex gap-3 pb-2">
