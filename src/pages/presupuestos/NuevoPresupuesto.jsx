@@ -75,7 +75,7 @@ export default function NuevoPresupuesto() {
     supabase.from('plantillas').update({ usos: (pl.usos || 0) + 1 }).eq('id', pl.id)
   }
 
-  // cargar presupuesto existente para editar
+  // cargar presupuesto existente para editar y saltar al paso 2
   useEffect(() => {
     if (!editarId) return
     async function cargarEditar() {
@@ -96,6 +96,7 @@ export default function NuevoPresupuesto() {
           cantidad: it.cantidad, precio_unit: it.precio_unit,
         })))
       }
+      setStep(2) // en modo edición ir directo a los ítems
     }
     cargarEditar()
   }, [editarId])
@@ -216,9 +217,9 @@ export default function NuevoPresupuesto() {
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1">
-          <p className="text-white font-bold text-[17px]">{editarId ? 'Editar presupuesto' : 'Nuevo presupuesto'}</p>
+          <p className="text-white font-bold text-[17px]">{editarId ? '✎ Editar presupuesto' : 'Nuevo presupuesto'}</p>
           <p className="text-gray-500 text-[12px]">
-            {plantillaNombre ? `📋 ${plantillaNombre}` : `Paso ${step} de 3`}
+            {editarId ? (titulo || 'Cargando...') : plantillaNombre ? `📋 ${plantillaNombre}` : `Paso ${step} de 3`}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -448,11 +449,19 @@ export default function NuevoPresupuesto() {
               style={{ background: '#161622', border: '1px solid #1E1E2E' }} />
           </div>
 
-          <button onClick={() => setStep(3)}
-            className="w-full py-4 rounded-2xl text-white font-bold text-[15px]"
-            style={{ background: '#3B82F6' }}>
-            Ver resumen →
-          </button>
+          {editarId ? (
+            <button onClick={() => guardar()} disabled={guardando}
+              className="w-full py-4 rounded-2xl text-white font-bold text-[15px] disabled:opacity-50"
+              style={{ background: '#22C55E' }}>
+              {guardando ? 'Guardando...' : '✓ Guardar cambios'}
+            </button>
+          ) : (
+            <button onClick={() => setStep(3)}
+              className="w-full py-4 rounded-2xl text-white font-bold text-[15px]"
+              style={{ background: '#3B82F6' }}>
+              Ver resumen →
+            </button>
+          )}
         </div>
       )}
 
