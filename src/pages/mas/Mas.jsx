@@ -8,7 +8,7 @@ const TILES = [
   { icon: BarChart2,      label: 'Estadísticas',  color: '#2563EB', to: '/estadisticas' },
   { icon: Users,          label: 'Clientes',      color: '#0D9488', to: '/clientes' },
   { icon: LayoutTemplate, label: 'Plantillas',    color: '#EA580C', to: '/plantillas' },
-  { icon: Camera,         label: 'Trabajos',      color: '#7C3AED', to: '/obras' },
+  { icon: HardHat,        label: 'Trabajos',      color: '#7C3AED', to: '/obras' },
   { icon: Sparkles,       label: 'IA',            color: '#6D28D9', to: null, badge: 'PRONTO' },
   { icon: Users2,         label: 'Equipo',        color: '#0E7490', to: null, badge: 'PRONTO' },
   { icon: FileBarChart,   label: 'Reportes',      color: '#15803D', to: '/reportes' },
