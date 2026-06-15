@@ -67,7 +67,8 @@ export default function DetallePresupuesto() {
     }
 
     const url = `${window.location.origin}/p/${token}`
-    const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
+    const trabajo = p.titulo ? ` — ${p.titulo}` : ''
+    const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero}${trabajo} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
     window.open(`https://wa.me/${tel}?text=${msg}`)
   }
 
