@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Phone, MessageCircle, MapPin, Plus, X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Phone, MessageCircle, MapPin, Plus, X, Check, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
 import { useClientes } from '../../lib/useClientes'
@@ -28,7 +28,10 @@ export default function Agenda() {
   const [visitas, setVisitas] = useState([])
   const [loading, setLoading] = useState(true)
   const [showNueva, setShowNueva] = useState(false)
+  const [editando, setEditando] = useState(null)
+  const [formEdit, setFormEdit] = useState({})
   const [guardando, setGuardando] = useState(false)
+  const [guardandoEdit, setGuardandoEdit] = useState(false)
   const [form, setForm] = useState({ cliente_id: '', descripcion: '', direccion: '', hora: '09:00', notas: '' })
 
   const lunes = addDays(hoy, semanaOffset * 7 - ((hoy.getDay() + 6) % 7))
@@ -88,7 +91,23 @@ export default function Agenda() {
     setVisitas(vs => vs.filter(v => v.id !== id))
   }
 
+  async function guardarEdit() {
+    if (!formEdit.descripcion?.trim()) return
+    setGuardandoEdit(true)
+    await supabase.from('visitas').update({
+      cliente_id:  formEdit.cliente_id || null,
+      descripcion: formEdit.descripcion,
+      direccion:   formEdit.direccion || '',
+      hora:        formEdit.hora,
+      notas:       formEdit.notas || '',
+    }).eq('id', editando.id)
+    setGuardandoEdit(false)
+    setEditando(null)
+    cargar()
+  }
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setEdit = (k, v) => setFormEdit(f => ({ ...f, [k]: v }))
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ background: '#0D0D14' }}>
@@ -170,8 +189,13 @@ export default function Agenda() {
                           {v.direccion && <p className="text-gray-600 text-[11px] mt-0.5">📍 {v.direccion}</p>}
                           {v.notas && <p className="text-gray-600 text-[11px] mt-0.5 italic">{v.notas}</p>}
                         </div>
-                        {/* acciones rápidas de status */}
+                        {/* acciones rápidas */}
                         <div className="flex gap-1">
+                          <button onClick={() => { setEditando(v); setFormEdit({ cliente_id: v.cliente_id || '', descripcion: v.descripcion, direccion: v.direccion || '', hora: v.hora || '09:00', notas: v.notas || '' }) }}
+                            className="w-7 h-7 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(168,85,247,.2)' }}>
+                            <Pencil size={12} style={{ color: '#A855F7' }} />
+                          </button>
                           {v.status === 'pendiente' && (
                             <button onClick={() => cambiarStatus(v.id, 'confirmada')}
                               className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -198,7 +222,7 @@ export default function Agenda() {
                             style={{ background: 'rgba(59,130,246,.12)', color: '#3B82F6' }}>
                             <Phone size={12} /> Llamar
                           </a>
-                          <a href={`https://wa.me/${tel.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
+                          <a href={(() => { const d = tel.replace(/\D/g,''); return `https://wa.me/${d.startsWith('54') ? d : d.startsWith('0') ? '54'+d.slice(1) : '54'+d}` })()} target="_blank" rel="noreferrer"
                             className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[11px]"
                             style={{ background: 'rgba(34,197,94,.12)', color: '#22C55E' }}>
                             <MessageCircle size={12} /> WhatsApp
@@ -220,6 +244,59 @@ export default function Agenda() {
           </div>
         )}
       </div>
+
+      {/* modal editar visita */}
+      {editando && (
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setEditando(null)}>
+          <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6 overflow-y-auto max-h-[85vh]"
+            style={{ background: '#161622' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-white font-bold text-[17px]">Editar visita</p>
+              <button onClick={() => setEditando(null)}><X size={20} className="text-gray-400" /></button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-1">Cliente</label>
+                <select value={formEdit.cliente_id} onChange={e => setEdit('cliente_id', e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none appearance-none"
+                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                  <option value="">Sin cliente asignado</option>
+                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-1">Descripción *</label>
+                <input value={formEdit.descripcion} onChange={e => setEdit('descripcion', e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+              </div>
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-1">Hora</label>
+                <input type="time" value={formEdit.hora} onChange={e => setEdit('hora', e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+              </div>
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-1">Dirección</label>
+                <input value={formEdit.direccion} onChange={e => setEdit('direccion', e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+              </div>
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-1">Notas</label>
+                <textarea value={formEdit.notas} onChange={e => setEdit('notas', e.target.value)} rows={2}
+                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none resize-none"
+                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+              </div>
+            </div>
+            <button onClick={guardarEdit} disabled={guardandoEdit || !formEdit.descripcion?.trim()}
+              className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-5 disabled:opacity-50"
+              style={{ background: '#22C55E' }}>
+              {guardandoEdit ? 'Guardando...' : '✓ Guardar cambios'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* modal nueva visita */}
       {showNueva && (

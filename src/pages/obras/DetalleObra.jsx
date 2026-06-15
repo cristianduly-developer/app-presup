@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, X, Camera, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, X, Camera, RefreshCw, Pencil } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
 import { supabase } from '../../lib/supabase'
+import { useClientes } from '../../lib/useClientes'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
@@ -11,6 +12,7 @@ const TABS = ['Resumen', 'Pagos', 'Gastos', 'Horas', 'Fotos', 'Notas']
 export default function DetalleObra() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { clientes } = useClientes()
   const [obra, setObra] = useState(null)
   const [pagos, setPagos] = useState([])
   const [gastos, setGastos] = useState([])
@@ -24,6 +26,11 @@ export default function DetalleObra() {
   const [form, setForm] = useState({})
   const [guardando, setGuardando] = useState(false)
   const [errorModal, setErrorModal] = useState('')
+
+  // edición de obra
+  const [showEditar, setShowEditar] = useState(false)
+  const [formObra, setFormObra] = useState({})
+  const [guardandoObra, setGuardandoObra] = useState(false)
 
   useEffect(() => { cargar() }, [id])
 
@@ -84,6 +91,21 @@ export default function DetalleObra() {
     cargar()
   }
 
+  async function guardarObra() {
+    if (!formObra.nombre?.trim()) return
+    setGuardandoObra(true)
+    await supabase.from('obras').update({
+      nombre:      formObra.nombre.trim(),
+      cliente_id:  formObra.cliente_id || null,
+      descripcion: formObra.descripcion || '',
+      total:       Number(formObra.total) || 0,
+      direccion:   formObra.direccion || '',
+    }).eq('id', id)
+    setGuardandoObra(false)
+    setShowEditar(false)
+    cargar()
+  }
+
   if (loading) return (
     <div className="flex-1 flex items-center justify-center" style={{ background: '#0D0D14' }}>
       <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(59,130,246,.3)', borderTopColor: '#3B82F6' }} />
@@ -115,6 +137,11 @@ export default function DetalleObra() {
           <p className="text-white font-bold text-[16px] leading-tight truncate">{obra.nombre}</p>
           {obra.clientes?.nombre && <p className="text-gray-500 text-[12px]">{obra.clientes.nombre}</p>}
         </div>
+        <button onClick={() => { setFormObra({ nombre: obra.nombre, cliente_id: obra.cliente_id || '', descripcion: obra.descripcion || '', total: obra.total || '', direccion: obra.direccion || '' }); setShowEditar(true) }}
+          className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+          <Pencil size={14} className="text-gray-400" />
+        </button>
         <button onClick={cargar} className="text-gray-500"><RefreshCw size={16} /></button>
       </div>
 
@@ -301,6 +328,39 @@ export default function DetalleObra() {
             style={{ background: '#3B82F6' }}>
             {STATUS_NEXT[obra.status].label}
           </button>
+        </div>
+      )}
+
+      {/* modal editar obra */}
+      {showEditar && (
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setShowEditar(false)}>
+          <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6 overflow-y-auto max-h-[85vh]"
+            style={{ background: '#161622' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-white font-bold text-[17px]">Editar obra</p>
+              <button onClick={() => setShowEditar(false)}><X size={20} className="text-gray-400" /></button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Campo label="Nombre de la obra *" value={formObra.nombre} onChange={v => setFormObra(f => ({...f, nombre: v}))} placeholder="Nombre" />
+              <Campo label="Total ($)" type="number" value={String(formObra.total)} onChange={v => setFormObra(f => ({...f, total: v}))} placeholder="0" />
+              <Campo label="Dirección" value={formObra.direccion} onChange={v => setFormObra(f => ({...f, direccion: v}))} placeholder="Opcional" />
+              <Campo label="Descripción / Notas" value={formObra.descripcion} onChange={v => setFormObra(f => ({...f, descripcion: v}))} placeholder="Opcional" />
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-1">Cliente</label>
+                <select value={formObra.cliente_id} onChange={e => setFormObra(f => ({...f, cliente_id: e.target.value}))}
+                  className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                  style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                  <option value="">Sin cliente</option>
+                  {clientes.map(c => <option key={c.id} value={c.id} className="bg-gray-900">{c.nombre}</option>)}
+                </select>
+              </div>
+            </div>
+            <button onClick={guardarObra} disabled={guardandoObra || !formObra.nombre?.trim()}
+              className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-5 disabled:opacity-50"
+              style={{ background: '#22C55E' }}>
+              {guardandoObra ? 'Guardando...' : '✓ Guardar cambios'}
+            </button>
+          </div>
         </div>
       )}
 

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/useAuth'
 import { verificarSuscripcion } from './lib/useSuscripcion'
+import { supabase } from './lib/supabase'
 import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
@@ -29,8 +30,25 @@ import PdfPresupuesto from './pages/presupuestos/PdfPresupuesto'
 export default function App() {
   const { user, loading } = useAuth()
   const [showCreate, setShowCreate] = useState(false)
-  const [suscripcion, setSuscripcion] = useState(null)   // null = no verificado aún
+  const [suscripcion, setSuscripcion] = useState(null)
   const [checkingAcceso, setCheckingAcceso] = useState(false)
+  const [notif, setNotif] = useState(null)
+  const notifTimer = useRef(null)
+
+  useEffect(() => {
+    if (!user) return
+    const canal = supabase.channel(`presupuestos-${user.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'presupuestos', filter: `user_id=eq.${user.id}` },
+        payload => {
+          if (payload.new?.status === 'aprobado' && payload.old?.status !== 'aprobado') {
+            clearTimeout(notifTimer.current)
+            setNotif({ mensaje: `¡Presupuesto #${payload.new.numero} aprobado por el cliente!`, id: payload.new.id })
+            notifTimer.current = setTimeout(() => setNotif(null), 7000)
+          }
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(canal); clearTimeout(notifTimer.current) }
+  }, [user?.id])
 
   // Verificar suscripción cada vez que hay un usuario logueado
   useEffect(() => {
@@ -53,6 +71,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <NotifBanner notif={notif} onClose={() => setNotif(null)} />
       <Routes>
         {/* link público y PDF — sin auth */}
         <Route path="/p/:token" element={<LinkPublico />} />
@@ -109,6 +128,21 @@ export default function App() {
         } />
       </Routes>
     </BrowserRouter>
+  )
+}
+
+function NotifBanner({ notif, onClose }) {
+  const navigate = useNavigate()
+  if (!notif) return null
+  return (
+    <div
+      onClick={() => { navigate(`/presupuestos/${notif.id}`); onClose() }}
+      className="fixed top-4 left-4 right-4 z-[200] rounded-2xl p-4 flex items-center gap-3 cursor-pointer"
+      style={{ background: '#22C55E', boxShadow: '0 8px 32px rgba(34,197,94,.5)', maxWidth: 430, margin: '0 auto' }}>
+      <span className="text-2xl">🎉</span>
+      <p className="text-white font-bold text-[14px] flex-1">{notif.mensaje}</p>
+      <button onClick={e => { e.stopPropagation(); onClose() }} className="text-white/70 text-[18px] leading-none">✕</button>
+    </div>
   )
 }
 
