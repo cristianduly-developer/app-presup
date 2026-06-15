@@ -12,6 +12,7 @@ export default function LinkPublico() {
   const [aceptado, setAceptado] = useState(false)
   const [errAceptar, setErrAceptar] = useState('')
   const [showFirma, setShowFirma] = useState(false)
+  const [nombreFirma, setNombreFirma] = useState('')
 
   // canvas firma
   const canvasRef = useRef(null)
@@ -69,8 +70,7 @@ export default function LinkPublico() {
     setErrAceptar('')
     const canvas = canvasRef.current
     const firmaBase64 = canvas.toDataURL('image/png')
-    const nombreCliente = p.cliente_nombre || p.clientes?.nombre || ''
-    const result = await aceptar({ firma_imagen: firmaBase64, firma_nombre: nombreCliente })
+    const result = await aceptar({ firma_imagen: firmaBase64, firma_nombre: nombreFirma })
     if (result?.ok) setAceptado(true)
     else setErrAceptar(result?.error || 'Error al aceptar. Intentá de nuevo.')
     setAceptando(false)
@@ -194,7 +194,7 @@ export default function LinkPublico() {
           <>
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
 
-            <button onClick={() => setShowFirma(true)}
+            <button onClick={() => { setNombreFirma(p.cliente_nombre || p.clientes?.nombre || ''); setShowFirma(true) }}
               className="w-full py-5 rounded-2xl text-white font-bold text-[17px]"
               style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
               ✅ ACEPTAR PRESUPUESTO
@@ -211,13 +211,16 @@ export default function LinkPublico() {
                   <div className="w-10 h-1 rounded-full mx-auto" style={{ background: '#2A2A3A' }} />
                   <p className="text-white font-bold text-[16px] text-center">Confirmación de aceptación</p>
 
-                  {/* nombre precargado */}
+                  {/* nombre editable */}
                   <div>
-                    <p className="text-gray-500 text-[11px] mb-1.5">Nombre del cliente</p>
-                    <div className="rounded-xl px-4 py-3 text-white text-[14px] font-semibold"
-                      style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
-                      {p.cliente_nombre || p.clientes?.nombre || 'Cliente'}
-                    </div>
+                    <p className="text-gray-500 text-[11px] mb-1.5">Tu nombre completo</p>
+                    <input
+                      value={nombreFirma}
+                      onChange={e => setNombreFirma(e.target.value)}
+                      placeholder="Escribí tu nombre"
+                      className="w-full rounded-xl px-4 py-3 text-white text-[14px] font-semibold outline-none"
+                      style={{ background: '#0D0D14', border: `1px solid ${nombreFirma ? '#3B82F6' : '#2A2A3A'}` }}
+                    />
                   </div>
 
                   {/* canvas firma */}
@@ -253,7 +256,7 @@ export default function LinkPublico() {
                   </div>
 
                   <p className="text-gray-600 text-[10px] text-center leading-relaxed">
-                    Al confirmar, {p.cliente_nombre || p.clientes?.nombre || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Queda registrado con fecha y hora.
+                    Al confirmar, {nombreFirma || 'el cliente'} acepta el presupuesto #{p.numero} por {fmt(p.total)} presentado por {prof?.nombre}. Queda registrado con fecha y hora.
                   </p>
 
                   <div className="flex gap-3 pb-2">
@@ -262,7 +265,7 @@ export default function LinkPublico() {
                       style={{ background: '#0D0D14', border: '1px solid #1E1E2E' }}>
                       Cancelar
                     </button>
-                    <button onClick={confirmarFirma} disabled={!hasDrawn || aceptando}
+                    <button onClick={confirmarFirma} disabled={!hasDrawn || !nombreFirma.trim() || aceptando}
                       className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] flex items-center justify-center disabled:opacity-40"
                       style={{ background: '#22C55E' }}>
                       {aceptando
