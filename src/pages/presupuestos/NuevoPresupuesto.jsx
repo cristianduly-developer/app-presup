@@ -347,6 +347,13 @@ export default function NuevoPresupuesto() {
             style={{ background: '#3B82F6' }}>
             Siguiente → Agregar ítems
           </button>
+          {titulo.trim() && !editarId && (
+            <button onClick={() => guardar('borrador')} disabled={guardando}
+              className="w-full py-3 rounded-2xl font-semibold text-[14px] disabled:opacity-50"
+              style={{ background: 'transparent', color: '#6B7280', border: '1px solid #2A2A3A' }}>
+              {guardando ? 'Guardando...' : '💾 Guardar borrador y salir'}
+            </button>
+          )}
         </div>
       )}
 
@@ -488,11 +495,18 @@ export default function NuevoPresupuesto() {
               {guardando ? 'Guardando...' : '✓ Guardar cambios'}
             </button>
           ) : (
-            <button onClick={() => setStep(3)}
-              className="w-full py-4 rounded-2xl text-white font-bold text-[15px]"
-              style={{ background: '#3B82F6' }}>
-              Ver resumen →
-            </button>
+            <>
+              <button onClick={() => setStep(3)}
+                className="w-full py-4 rounded-2xl text-white font-bold text-[15px]"
+                style={{ background: '#3B82F6' }}>
+                Ver resumen →
+              </button>
+              <button onClick={() => guardar('borrador')} disabled={guardando}
+                className="w-full py-3 rounded-2xl font-semibold text-[14px] disabled:opacity-50"
+                style={{ background: 'transparent', color: '#6B7280', border: '1px solid #2A2A3A' }}>
+                {guardando ? 'Guardando...' : '💾 Guardar borrador y salir'}
+              </button>
+            </>
           )}
         </div>
       )}

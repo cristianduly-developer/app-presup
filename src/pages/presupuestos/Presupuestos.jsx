@@ -31,6 +31,12 @@ export default function Presupuestos() {
   const navigate = useNavigate()
   const { presupuestos, loading, cargar, crear } = usePresupuestos()
 
+  const hoy = new Date(); hoy.setHours(0,0,0,0)
+  function diasParaVencer(p) {
+    if (!p.fecha_vence) return Infinity
+    return Math.ceil((new Date(p.fecha_vence + 'T00:00:00') - hoy) / 86400000)
+  }
+
   const STATUS_ORDEN = { enviado: 0, borrador: 1, aprobado: 2, rechazado: 3, vencido: 4 }
   const lista = presupuestos
     .filter(p => {
@@ -39,10 +45,14 @@ export default function Presupuestos() {
       return p.status === filtro.toLowerCase()
     })
     .sort((a, b) => {
-      if (filtro === 'Pendientes' || filtro === 'Todos') {
-        const da = STATUS_ORDEN[a.status] ?? 5
-        const db = STATUS_ORDEN[b.status] ?? 5
-        if (da !== db) return da - db
+      const da = STATUS_ORDEN[a.status] ?? 5
+      const db = STATUS_ORDEN[b.status] ?? 5
+      if (da !== db) return da - db
+      // enviados: por vencimiento ASC (más próximo primero)
+      if (a.status === 'enviado' && b.status === 'enviado') {
+        const va = a.fecha_vence ? new Date(a.fecha_vence).getTime() : Infinity
+        const vb = b.fecha_vence ? new Date(b.fecha_vence).getTime() : Infinity
+        return va - vb
       }
       return new Date(b.created_at) - new Date(a.created_at)
     })
@@ -138,13 +148,32 @@ export default function Presupuestos() {
             const cobrado = (p.pagos || []).reduce((s, pg) => s + pg.monto, 0)
             const pct = p.total > 0 ? Math.round((cobrado / p.total) * 100) : 0
             const fecha = new Date(p.created_at).toLocaleDateString('es-AR')
+            const dias = p.status === 'enviado' ? diasParaVencer(p) : Infinity
+            const urgente = dias <= 3 && dias >= 0
+            const vencido = dias < 0
+            const urgColor = vencido ? '#EF4444' : '#F97316'
+            const cardBorder = urgente || vencido ? `1px solid ${urgColor}44` : '1px solid #1E1E2E'
+            const cardBg = urgente || vencido ? `rgba(${vencido ? '239,68,68' : '249,115,22'},.04)` : '#161622'
             return (
               <button key={p.id} onClick={() => navigate(`/presupuestos/${p.id}`)}
                 className="text-left w-full rounded-2xl p-4 active:opacity-70"
-                style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+                style={{ background: cardBg, border: cardBorder }}>
+                {/* banner urgencia */}
+                {(urgente || vencido) && (
+                  <div className="flex items-center gap-1.5 mb-2.5 px-2 py-1 rounded-lg"
+                    style={{ background: urgColor + '18' }}>
+                    <span className="text-[11px]">{vencido ? '🔴' : '🟠'}</span>
+                    <span className="text-[11px] font-semibold" style={{ color: urgColor }}>
+                      {vencido
+                        ? `Vencido hace ${Math.abs(dias)} día${Math.abs(dias) !== 1 ? 's' : ''}`
+                        : dias === 0 ? '¡Vence HOY!'
+                        : `Vence en ${dias} día${dias !== 1 ? 's' : ''}`}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">
-                    <CircleProgress pct={pct} size={54} color={color} stroke={4} />
+                    <CircleProgress pct={pct} size={54} color={urgente || vencido ? urgColor : color} stroke={4} />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-white text-[10px] font-bold">{pct}%</span>
                     </div>
