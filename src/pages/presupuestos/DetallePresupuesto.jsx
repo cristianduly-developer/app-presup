@@ -48,7 +48,8 @@ export default function DetallePresupuesto() {
 
   async function enviarWhatsApp() {
     if (!p?.clientes?.telefono) return
-    const tel = p.clientes.telefono.replace(/\D/g, '')
+    const d = p.clientes.telefono.replace(/\D/g, '')
+    const tel = d.startsWith('54') ? d : d.startsWith('0') ? '54' + d.slice(1) : '54' + d
     const url = `${window.location.origin}/p/${p.token_publico}`
     const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
     window.open(`https://wa.me/${tel}?text=${msg}`)
