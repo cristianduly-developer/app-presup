@@ -31,7 +31,7 @@ const DOT = { pendiente: '#F97316', confirmada: '#22C55E', cancelada: '#EF4444' 
 
 export default function Inicio() {
   const navigate = useNavigate()
-  const { perfil } = useAuth()
+  const { perfil, user } = useAuth()
   const { kpis, agenda, embudo, obraDestacada, loading } = useKpis()
 
   const nombreRaw = perfil?.nombre || user?.user_metadata?.full_name || user?.user_metadata?.name || ''
