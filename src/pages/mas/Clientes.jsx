@@ -5,6 +5,13 @@ import { useClientes } from '../../lib/useClientes'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
+function waMe(tel) {
+  const d = tel.replace(/\D/g, '')
+  if (d.startsWith('54')) return `https://wa.me/${d}`
+  if (d.startsWith('0')) return `https://wa.me/54${d.slice(1)}`
+  return `https://wa.me/54${d}`
+}
+
 const CLASIFICACION = {
   excelente: { label: 'Excelente',  color: '#22C55E', emoji: '🟢' },
   normal:    { label: 'Normal',     color: '#9CA3AF', emoji: '🟡' },
@@ -101,7 +108,7 @@ export default function Clientes() {
                     </a>
                   )}
                   {c.telefono && (
-                    <a href={`https://wa.me/${c.telefono.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
+                    <a href={waMe(c.telefono)} target="_blank" rel="noreferrer"
                       className="flex-1 py-2 rounded-xl text-[11px] font-semibold text-center"
                       style={{ background: 'rgba(34,197,94,.12)', color: '#22C55E' }}
                       onClick={e => e.stopPropagation()}>
