@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Eye, MessageCircle, MoreHorizontal, ChevronRight, Download, Play, Plus, X } from 'lucide-react'
+import { ArrowLeft, Eye, MessageCircle, MoreHorizontal, ChevronRight, Download, Play, Plus, X, Trash2, Copy, Send, CheckCircle } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
 import { supabase } from '../../lib/supabase'
+import { usePlan, tieneFeature } from '../../lib/PlanContext'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
@@ -16,12 +17,21 @@ const STATUS_STYLE = {
 export default function DetallePresupuesto() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const plan = usePlan()
+
   const [p, setP] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('todos')
   const [showPago, setShowPago] = useState(false)
   const [montoPago, setMontoPago] = useState('')
   const [guardandoPago, setGuardandoPago] = useState(false)
+  const [showMas, setShowMas] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
+  const [confirmEliminar, setConfirmEliminar] = useState(false)
+
+  function abrirPDF() {
+    window.open(`${window.location.origin}/presupuestos/${id}/pdf`, '_blank')
+  }
 
   useEffect(() => { cargar() }, [id])
 
@@ -65,6 +75,41 @@ export default function DetallePresupuesto() {
     cargar()
   }
 
+  async function duplicar() {
+    setShowMas(false)
+    const { data: { user } } = await supabase.auth.getUser()
+    const items = (p.presupuesto_items || []).map(({ descripcion, tipo, cantidad, precio_unit, unidad, subtotal, orden }) =>
+      ({ descripcion, tipo, cantidad, precio_unit, unidad, subtotal, orden })
+    )
+    const { data: nuevo, error } = await supabase.rpc('crear_presupuesto', {
+      p_user_id:          user.id,
+      p_cliente_id:       p.cliente_id,
+      p_vigencia_dias:    p.vigencia_dias,
+      p_notas_internas:   p.notas_internas || '',
+      p_status:           'borrador',
+      p_total:            p.total,
+      p_total_materiales: p.total_materiales,
+      p_total_mano_obra:  p.total_mano_obra,
+      p_margen_estimado:  p.margen_estimado,
+      p_fecha_vence:      null,
+      p_items:            items,
+    })
+    if (!error && nuevo) navigate(`/presupuestos/${nuevo.id}`)
+  }
+
+  async function eliminar() {
+    setEliminando(true)
+    await supabase.from('presupuesto_items').delete().eq('presupuesto_id', id)
+    await supabase.from('presupuestos').delete().eq('id', id)
+    navigate('/presupuestos', { replace: true })
+  }
+
+  async function cambiarStatus(nuevoStatus) {
+    setShowMas(false)
+    await supabase.from('presupuestos').update({ status: nuevoStatus }).eq('id', id)
+    cargar()
+  }
+
   async function marcarIniciada() {
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('presupuestos').update({ status: 'aprobado' }).eq('id', id)
@@ -72,7 +117,7 @@ export default function DetallePresupuesto() {
       user_id: user.id,
       presupuesto_id: id,
       cliente_id: p.cliente_id,
-      nombre: `${p.clientes?.nombre || 'Cliente'} · Pres. #${p.numero}`,
+      nombre: p.titulo || `${p.clientes?.nombre || 'Cliente'} · Pres. #${p.numero}`,
       total: p.total,
       status: 'en_ejecucion',
       fecha_inicio: new Date().toISOString().split('T')[0],
@@ -112,19 +157,27 @@ export default function DetallePresupuesto() {
         <button onClick={() => navigate(-1)} className="text-gray-400 mr-1"><ArrowLeft size={22} /></button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-white font-bold text-[16px]">Presupuesto #{p.numero}</span>
+            <span className="text-white font-bold text-[16px] truncate">{p.titulo || `Presupuesto #${p.numero}`}</span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: st.bg, color: st.color }}>{st.label}</span>
-            <span className="text-gray-500 text-[11px]">Creado: {new Date(p.created_at).toLocaleDateString('es-AR')}</span>
+            <span className="text-gray-500 text-[11px]">#{p.numero} · {new Date(p.created_at).toLocaleDateString('es-AR')}</span>
           </div>
         </div>
         <button onClick={() => navigate(`/p/${p.token_publico}`)}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
           style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           <Eye size={13} className="text-gray-400" />
-          <span className="text-gray-400 text-[11px]">Vista cliente</span>
+          <span className="text-gray-400 text-[11px]">Vista</span>
         </button>
+        {tieneFeature(plan, 'pdf') && (
+          <button onClick={abrirPDF}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
+            style={{ background: 'rgba(168,85,247,.12)', border: '1px solid rgba(168,85,247,.2)' }}>
+            <Download size={13} className="text-purple-400" />
+            <span className="text-purple-400 text-[11px]">PDF</span>
+          </button>
+        )}
         <button onClick={enviarWhatsApp}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
           style={{ background: 'rgba(34,197,94,.12)', border: '1px solid rgba(34,197,94,.2)' }}>
@@ -193,14 +246,15 @@ export default function DetallePresupuesto() {
           style={{ background: '#22C55E' }}>
           💰 Registrar pago
         </button>
-        <button onClick={() => navigate(`/presupuestos/nuevo`)}
+        <button onClick={() => navigate(`/presupuestos/nuevo?editar=${id}`)}
           className="flex-1 py-3.5 rounded-2xl text-white font-semibold text-[12px]"
           style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           ✎ Editar
         </button>
-        <button className="flex-1 py-3.5 rounded-2xl font-semibold text-[12px]"
-          style={{ background: '#161622', border: '1px solid #1E1E2E', color: '#EF4444' }}>
-          ⋯ Más
+        <button onClick={() => setShowMas(true)}
+          className="w-12 py-3.5 rounded-2xl font-semibold text-[18px] flex items-center justify-center"
+          style={{ background: '#161622', border: '1px solid #1E1E2E', color: '#9CA3AF' }}>
+          ⋯
         </button>
       </div>
 
@@ -275,7 +329,8 @@ export default function DetallePresupuesto() {
             <Play size={13} /> Marcar iniciada
           </button>
         )}
-        <button className="flex-1 py-3.5 rounded-2xl text-[12px] font-semibold text-white flex items-center justify-center gap-2"
+        <button onClick={abrirPDF}
+          className="flex-1 py-3.5 rounded-2xl text-[12px] font-semibold text-white flex items-center justify-center gap-2"
           style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           <Download size={13} /> PDF
         </button>
@@ -285,6 +340,72 @@ export default function DetallePresupuesto() {
           <MessageCircle size={13} /> WhatsApp
         </button>
       </div>
+
+      {/* bottom sheet "Más" */}
+      {showMas && (
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setShowMas(false)}>
+          <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-5"
+            style={{ background: '#161622', border: '1px solid #1E1E2E' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: '#2A2A3A' }} />
+            <p className="text-gray-400 text-[11px] font-semibold mb-3 px-1">Presupuesto #{p.numero}</p>
+            <div className="flex flex-col gap-1">
+              <button onClick={duplicar}
+                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left"
+                style={{ background: '#0D0D14' }}>
+                <Copy size={16} className="text-blue-400" />
+                <span className="text-white font-medium text-[14px]">Duplicar presupuesto</span>
+              </button>
+              {p.status === 'borrador' && (
+                <button onClick={() => cambiarStatus('enviado')}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left"
+                  style={{ background: '#0D0D14' }}>
+                  <Send size={16} className="text-green-400" />
+                  <span className="text-white font-medium text-[14px]">Marcar como enviado</span>
+                </button>
+              )}
+              {p.status === 'enviado' && (
+                <button onClick={() => cambiarStatus('aprobado')}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left"
+                  style={{ background: '#0D0D14' }}>
+                  <CheckCircle size={16} className="text-green-400" />
+                  <span className="text-white font-medium text-[14px]">Marcar como aprobado</span>
+                </button>
+              )}
+              <button onClick={() => { setShowMas(false); setConfirmEliminar(true) }}
+                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left mt-1"
+                style={{ background: 'rgba(239,68,68,.08)' }}>
+                <Trash2 size={16} className="text-red-400" />
+                <span className="font-medium text-[14px]" style={{ color: '#EF4444' }}>Eliminar presupuesto</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* confirm eliminar */}
+      {confirmEliminar && (
+        <div className="fixed inset-0 z-[70] flex items-end" onClick={() => setConfirmEliminar(false)}>
+          <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6"
+            style={{ background: '#161622', border: '1px solid #1E1E2E' }}
+            onClick={e => e.stopPropagation()}>
+            <p className="text-white font-bold text-[17px] mb-2">¿Eliminar presupuesto?</p>
+            <p className="text-gray-400 text-[13px] mb-6">Esta acción no se puede deshacer. Se eliminarán todos los ítems.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmEliminar(false)}
+                className="flex-1 py-3.5 rounded-2xl text-gray-400 font-semibold text-[14px]"
+                style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                Cancelar
+              </button>
+              <button onClick={eliminar} disabled={eliminando}
+                className="flex-1 py-3.5 rounded-2xl font-bold text-[14px] text-white disabled:opacity-50"
+                style={{ background: '#EF4444' }}>
+                {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* modal registrar pago */}
       {showPago && (

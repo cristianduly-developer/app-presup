@@ -20,37 +20,37 @@ export function usePresupuestos() {
   async function crear(datos, items) {
     const { data: { user } } = await supabase.auth.getUser()
 
-    // calcular totales
     const totalMat = items.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
     const totalMO  = items.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
     const total = totalMat + totalMO
-
     const fechaVence = datos.vigencia_dias
       ? new Date(Date.now() + datos.vigencia_dias * 86400000).toISOString().split('T')[0]
       : null
 
-    const { data: presup, error } = await supabase
-      .from('presupuestos')
-      .insert({
-        ...datos,
-        user_id: user.id,
-        total,
-        total_materiales: totalMat,
-        total_mano_obra: totalMO,
-        margen_estimado: total - totalMat,
-        fecha_vence: fechaVence,
-        status: 'borrador',
-      })
-      .select().single()
+    const { data: presup, error } = await supabase.rpc('crear_presupuesto', {
+      p_user_id:         user.id,
+      p_cliente_id:      datos.cliente_id || null,
+      p_vigencia_dias:   datos.vigencia_dias || 5,
+      p_notas_internas:  datos.notas_internas || '',
+      p_status:          datos.status || 'borrador',
+      p_total:           total,
+      p_total_materiales: totalMat,
+      p_total_mano_obra:  totalMO,
+      p_margen_estimado:  total - totalMat,
+      p_fecha_vence:     fechaVence,
+      p_items:           items.map((it, i) => ({ ...it, orden: i })),
+    })
 
-    if (error) return { error }
-
-    if (items.length > 0) {
-      await supabase.from('presupuesto_items').insert(
-        items.map((it, i) => ({ ...it, presupuesto_id: presup.id, orden: i }))
-      )
+    if (error) {
+      if (error.message?.includes('LIMITE_PLAN')) {
+        const msg = error.message.replace('LIMITE_PLAN: ', '')
+        return { error: { message: msg, tipo: 'limite' } }
+      }
+      return { error }
     }
-
+    if (datos.titulo && presup?.id) {
+      await supabase.from('presupuestos').update({ titulo: datos.titulo }).eq('id', presup.id)
+    }
     await cargar()
     return { data: presup }
   }
@@ -78,12 +78,9 @@ export function usePresupuestoPublico(token) {
   useEffect(() => {
     if (!token) return
     supabase
-      .from('presupuestos')
-      .select(`*, clientes(nombre, telefono, direccion), presupuesto_items(*), pagos(monto), perfiles(nombre, oficio, telefono, logo_url)`)
-      .eq('token_publico', token)
-      .single()
+      .rpc('get_presupuesto_publico', { p_token: token })
       .then(({ data, error }) => {
-        if (error) setError('Presupuesto no encontrado')
+        if (error || !data) setError('Presupuesto no encontrado')
         else setData(data)
         setLoading(false)
       })

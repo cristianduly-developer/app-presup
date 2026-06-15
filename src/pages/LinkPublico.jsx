@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { usePresupuestoPublico } from '../lib/usePresupuestos'
 import CircleProgress from '../components/ui/CircleProgress'
 
@@ -7,10 +7,19 @@ function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
 export default function LinkPublico() {
   const { token } = useParams()
+  const [searchParams] = useSearchParams()
+  const printMode = searchParams.get('print') === '1'
   const { data: p, loading, error, aceptar } = usePresupuestoPublico(token)
   const [aceptando, setAceptando] = useState(false)
   const [aceptado, setAceptado] = useState(false)
   const [errAceptar, setErrAceptar] = useState('')
+  const [confirmar, setConfirmar] = useState(false)
+
+  useEffect(() => {
+    if (!loading && p && printMode) {
+      setTimeout(() => window.print(), 600)
+    }
+  }, [loading, p, printMode])
 
   async function handleAceptar() {
     setAceptando(true)
@@ -34,10 +43,10 @@ export default function LinkPublico() {
     </div>
   )
 
-  const cobrado = (p.pagos || []).reduce((s, pg) => s + pg.monto, 0)
+  const cobrado = p.cobrado || 0
   const pct = p.total > 0 ? Math.round((cobrado / p.total) * 100) : 0
   const vencido = p.fecha_vence && new Date(p.fecha_vence) < new Date()
-  const prof = p.perfiles
+  const prof = { nombre: p.prof_nombre, oficio: p.prof_oficio, logo_url: p.prof_logo }
 
   if (aceptado) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-5 px-6" style={{ background: '#0D0D14' }}>
@@ -77,6 +86,7 @@ export default function LinkPublico() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-gray-500 text-[11px]">Presupuesto #{p.numero}</p>
+              {p.titulo && <p className="text-blue-400 font-semibold text-[14px] mb-1">{p.titulo}</p>}
               <p className="text-white font-bold text-[30px]">{fmt(p.total)}</p>
             </div>
             <div className="relative">
@@ -120,7 +130,7 @@ export default function LinkPublico() {
         <div className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           <p className="text-gray-500 text-[11px] font-semibold tracking-wider mb-3">DETALLE</p>
           <div className="flex flex-col gap-3">
-            {(p.presupuesto_items || []).sort((a, b) => a.orden - b.orden).map((item, i) => (
+            {(p.items || []).sort((a, b) => a.orden - b.orden).map((item, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-lg shrink-0">{item.tipo === 'material' ? '🔧' : '👷'}</span>
                 <div className="flex-1 min-w-0">
@@ -137,17 +147,33 @@ export default function LinkPublico() {
         {p.status === 'enviado' && !vencido && (
           <>
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
-            <button onClick={handleAceptar} disabled={aceptando}
-              className="w-full py-5 rounded-2xl text-white font-bold text-[17px] flex items-center justify-center gap-3"
-              style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
-              {aceptando
-                ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                : '✅ ACEPTAR PRESUPUESTO'
-              }
-            </button>
-            <p className="text-gray-600 text-[11px] text-center">
-              Al aceptar, {prof?.nombre} recibirá una notificación para coordinar el trabajo.
-            </p>
+            {!confirmar ? (
+              <button onClick={() => setConfirmar(true)}
+                className="w-full py-5 rounded-2xl text-white font-bold text-[17px]"
+                style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
+                ✅ ACEPTAR PRESUPUESTO
+              </button>
+            ) : (
+              <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: 'rgba(34,197,94,.1)', border: '1px solid rgba(34,197,94,.3)' }}>
+                <p className="text-white font-bold text-center text-[15px]">¿Confirmás la aceptación?</p>
+                <p className="text-gray-400 text-[12px] text-center">Esta acción no se puede deshacer. {prof?.nombre} coordinará el inicio del trabajo.</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setConfirmar(false)}
+                    className="flex-1 py-3 rounded-xl text-gray-400 font-semibold text-[14px]"
+                    style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+                    Cancelar
+                  </button>
+                  <button onClick={handleAceptar} disabled={aceptando}
+                    className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] flex items-center justify-center"
+                    style={{ background: '#22C55E' }}>
+                    {aceptando
+                      ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      : 'Sí, aceptar'
+                    }
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 

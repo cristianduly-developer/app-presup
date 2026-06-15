@@ -18,16 +18,19 @@ export default function Clientes() {
   const [showNuevo, setShowNuevo] = useState(false)
   const [form, setForm] = useState({ nombre: '', telefono: '', email: '', direccion: '', clasificacion: 'normal' })
   const [guardando, setGuardando] = useState(false)
+  const [errorGuardar, setErrorGuardar] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   async function guardar() {
     if (!form.nombre.trim()) return
     setGuardando(true)
-    await crear(form)
+    setErrorGuardar('')
+    const { error } = await crear(form)
+    setGuardando(false)
+    if (error) { setErrorGuardar('No se pudo guardar. Intentá de nuevo.'); return }
     setShowNuevo(false)
     setForm({ nombre: '', telefono: '', email: '', direccion: '', clasificacion: 'normal' })
-    setGuardando(false)
   }
 
   const filtrados = clientes.filter(c =>
@@ -152,6 +155,7 @@ export default function Clientes() {
                 </div>
               </div>
             </div>
+            {errorGuardar && <p className="text-red-400 text-[12px] text-center mt-2">{errorGuardar}</p>}
             <button onClick={guardar} disabled={guardando || !form.nombre.trim()}
               className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-5 disabled:opacity-50"
               style={{ background: '#3B82F6' }}>

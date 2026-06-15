@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Bell, Search, Phone, ChevronRight } from 'lucide-react'
+import { Phone, ChevronRight } from 'lucide-react'
 import CircleProgress from '../components/ui/CircleProgress'
 import { useKpis } from '../lib/useKpis'
 import { useAuth } from '../lib/useAuth'
@@ -34,7 +34,8 @@ export default function Inicio() {
   const { perfil } = useAuth()
   const { kpis, agenda, embudo, obraDestacada, loading } = useKpis()
 
-  const nombre = perfil?.nombre?.split(' ')[0] || 'Hola'
+  const nombreRaw = perfil?.nombre || user?.user_metadata?.full_name || user?.user_metadata?.name || ''
+  const nombre = nombreRaw.split(' ')[0] || 'vos'
   const hoy = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
   const hoyFmt = hoy.charAt(0).toUpperCase() + hoy.slice(1)
 
@@ -53,13 +54,6 @@ export default function Inicio() {
         <div>
           <p className="text-white font-bold text-[18px] leading-tight">Hola, {nombre} 👋</p>
           <p className="text-gray-500 text-[13px]">{hoyFmt}</p>
-        </div>
-        <div className="flex gap-3 items-center">
-          <button><Search size={20} className="text-gray-400" /></button>
-          <div className="relative">
-            <button><Bell size={20} className="text-gray-400" /></button>
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center">3</span>
-          </div>
         </div>
       </div>
 

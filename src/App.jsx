@@ -24,6 +24,7 @@ import Plantillas from './pages/mas/Plantillas'
 import Configuracion from './pages/mas/Configuracion'
 import Reportes from './pages/mas/Reportes'
 import LinkPublico from './pages/LinkPublico'
+import PdfPresupuesto from './pages/presupuestos/PdfPresupuesto'
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -53,8 +54,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* link público — sin auth */}
+        {/* link público y PDF — sin auth */}
         <Route path="/p/:token" element={<LinkPublico />} />
+        <Route path="/presupuestos/:id/pdf" element={<PdfPresupuesto />} />
 
         {/* app autenticada */}
         <Route path="*" element={

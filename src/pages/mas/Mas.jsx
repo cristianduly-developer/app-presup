@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { BarChart2, Users, LayoutTemplate, Camera, Sparkles, Users2, FileBarChart, Settings, MessageCircle, LogOut, ChevronRight } from 'lucide-react'
+import { BarChart2, Users, LayoutTemplate, HardHat, Sparkles, Users2, FileBarChart, Settings, MessageCircle, LogOut, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 
 const WA_SOPORTE = '5492235767784'

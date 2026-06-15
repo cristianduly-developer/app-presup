@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Check } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Check, Zap } from 'lucide-react'
 import { usePresupuestos } from '../../lib/usePresupuestos'
 import { useClientes } from '../../lib/useClientes'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
-import { usePlan, LIMITES } from '../../lib/PlanContext'
+import { usePlan, LIMITES, tieneFeature } from '../../lib/PlanContext'
 
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
 
@@ -22,7 +22,12 @@ export default function NuevoPresupuesto() {
   const plan = usePlan()
   const [limiteError, setLimiteError] = useState('')
 
+  const editarId = searchParams.get('editar')
   const [step, setStep] = useState(1)
+  const [titulo, setTitulo] = useState('')
+  const [plantillasDisp, setPlantillasDisp] = useState([])
+  const [sugerencias, setSugerencias] = useState([])
+  const [plantillaAplicada, setPlantillaAplicada] = useState(null)
   const [clienteId, setClienteId] = useState('')
   const [clienteNuevo, setClienteNuevo] = useState({ nombre: '', telefono: '', direccion: '' })
   const [modoCliente, setModoCliente] = useState('existente')
@@ -31,6 +36,69 @@ export default function NuevoPresupuesto() {
   const [items, setItems] = useState([{ ...ITEM_VACIO }])
   const [guardando, setGuardando] = useState(false)
   const [plantillaNombre, setPlantillaNombre] = useState('')
+
+  // cargar plantillas disponibles (solo si el plan las incluye)
+  useEffect(() => {
+    if (!tieneFeature(plan, 'plantillas')) return
+    supabase.from('plantillas').select('*, plantilla_items(*)')
+      .order('usos', { ascending: false })
+      .then(({ data }) => setPlantillasDisp(data || []))
+  }, [plan])
+
+  // sugerir plantillas mientras escribe el título
+  useEffect(() => {
+    if (!titulo.trim() || plantillasDisp.length === 0 || plantillaAplicada) {
+      setSugerencias([])
+      return
+    }
+    const q = titulo.toLowerCase()
+    const matches = plantillasDisp.filter(p =>
+      p.nombre.toLowerCase().includes(q) ||
+      q.split(' ').some(w => w.length > 2 && p.nombre.toLowerCase().includes(w))
+    ).slice(0, 3)
+    setSugerencias(matches)
+  }, [titulo, plantillasDisp])
+
+  function aplicarPlantilla(pl) {
+    setPlantillaAplicada(pl.nombre)
+    setSugerencias([])
+    if (pl.nombre && !titulo) setTitulo(pl.nombre)
+    if (pl.plantilla_items?.length) {
+      setItems(pl.plantilla_items.map(it => ({
+        tipo:        it.tipo || 'material',
+        descripcion: it.descripcion || '',
+        unidad:      it.tipo === 'mano_obra' ? 'global' : 'u',
+        cantidad:    1,
+        precio_unit: it.precio || 0,
+      })))
+    }
+    supabase.from('plantillas').update({ usos: (pl.usos || 0) + 1 }).eq('id', pl.id)
+  }
+
+  // cargar presupuesto existente para editar
+  useEffect(() => {
+    if (!editarId) return
+    async function cargarEditar() {
+      const { data } = await supabase
+        .from('presupuestos')
+        .select('*, presupuesto_items(*)')
+        .eq('id', editarId)
+        .single()
+      if (!data) return
+      setTitulo(data.titulo || '')
+      setClienteId(data.cliente_id || '')
+      setModoCliente('existente')
+      setVigencia(data.vigencia_dias || 5)
+      setNotas(data.notas_internas || '')
+      if (data.presupuesto_items?.length) {
+        setItems(data.presupuesto_items.sort((a,b) => a.orden - b.orden).map(it => ({
+          tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad,
+          cantidad: it.cantidad, precio_unit: it.precio_unit,
+        })))
+      }
+    }
+    cargarEditar()
+  }, [editarId])
 
   // cargar plantilla si viene por URL
   useEffect(() => {
@@ -77,6 +145,42 @@ export default function NuevoPresupuesto() {
   }
 
   async function guardar(status = 'borrador') {
+    setGuardando(true)
+
+    if (editarId) {
+      // modo edición: UPDATE del presupuesto existente
+      let cId = clienteId
+      if (modoCliente === 'nuevo' && clienteNuevo.nombre) {
+        const { data } = await crearCliente(clienteNuevo)
+        cId = data?.id
+      }
+      const filtrados = items.filter(i => i.descripcion.trim())
+      const totalMat2 = filtrados.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
+      const totalMO2  = filtrados.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
+      const total2    = totalMat2 + totalMO2
+      const fechaVence = vigencia
+        ? new Date(Date.now() + vigencia * 86400000).toISOString().split('T')[0] : null
+
+      await supabase.from('presupuesto_items').delete().eq('presupuesto_id', editarId)
+      await supabase.from('presupuestos').update({
+        titulo, cliente_id: cId || null, vigencia_dias: vigencia, notas_internas: notas,
+        total: total2, total_materiales: totalMat2, total_mano_obra: totalMO2,
+        margen_estimado: total2 - totalMat2, fecha_vence: fechaVence,
+      }).eq('id', editarId)
+      await supabase.from('presupuesto_items').insert(
+        filtrados.map((it, i) => ({
+          presupuesto_id: editarId,
+          tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad,
+          cantidad: it.cantidad, precio_unit: it.precio_unit,
+          subtotal: it.cantidad * it.precio_unit, orden: i,
+        }))
+      )
+      setGuardando(false)
+      navigate(`/presupuestos/${editarId}`)
+      return
+    }
+
+    // modo creación
     const limite = LIMITES[plan]?.presupuestos ?? 50
     if (limite !== Infinity) {
       const inicio = new Date(); inicio.setDate(1); inicio.setHours(0,0,0,0)
@@ -85,22 +189,23 @@ export default function NuevoPresupuesto() {
         .eq('user_id', user.id)
         .gte('created_at', inicio.toISOString())
       if (count >= limite) {
+        setGuardando(false)
         setLimiteError(`Tu plan ${plan} permite hasta ${limite} presupuestos por mes. Ya usaste ${count}.`)
         return
       }
     }
-    setGuardando(true)
     let cId = clienteId
     if (modoCliente === 'nuevo' && clienteNuevo.nombre) {
       const { data } = await crearCliente(clienteNuevo)
       cId = data?.id
     }
     const { data, error } = await crear(
-      { cliente_id: cId || null, vigencia_dias: vigencia, notas_internas: notas, status },
+      { titulo, cliente_id: cId || null, vigencia_dias: vigencia, notas_internas: notas, status },
       items.filter(i => i.descripcion.trim())
     )
     setGuardando(false)
     if (!error && data) navigate(`/presupuestos/${data.id}`)
+    else if (error) setLimiteError('No se pudo guardar el presupuesto. Verificá tu conexión e intentá de nuevo.')
   }
 
   return (
@@ -111,7 +216,7 @@ export default function NuevoPresupuesto() {
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1">
-          <p className="text-white font-bold text-[17px]">Nuevo presupuesto</p>
+          <p className="text-white font-bold text-[17px]">{editarId ? 'Editar presupuesto' : 'Nuevo presupuesto'}</p>
           <p className="text-gray-500 text-[12px]">
             {plantillaNombre ? `📋 ${plantillaNombre}` : `Paso ${step} de 3`}
           </p>
@@ -127,6 +232,44 @@ export default function NuevoPresupuesto() {
       {/* ── PASO 1: Cliente ── */}
       {step === 1 && (
         <div className="px-4 flex flex-col gap-4">
+          <div>
+            <label className="text-gray-500 text-[11px] mb-1 block">Trabajo a realizar *</label>
+            <input
+              value={titulo}
+              onChange={e => { setTitulo(e.target.value); setPlantillaAplicada(null) }}
+              placeholder="Ej: Instalación eléctrica, Pintura exterior, Plomería baño..."
+              className="w-full rounded-2xl px-4 py-3.5 text-white text-[14px] outline-none"
+              style={{ background: '#161622', border: `1px solid ${titulo ? '#3B82F6' : '#1E1E2E'}` }}
+            />
+
+            {/* sugerencias de plantillas */}
+            {sugerencias.length > 0 && (
+              <div className="mt-2 flex flex-col gap-1.5">
+                <p className="text-gray-500 text-[10px] px-1">⚡ Plantillas que coinciden — tocá para cargar ítems:</p>
+                {sugerencias.map(pl => (
+                  <button key={pl.id} onClick={() => aplicarPlantilla(pl)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
+                    style={{ background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.25)' }}>
+                    <Zap size={14} className="text-blue-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-blue-300 font-semibold text-[13px]">{pl.nombre}</p>
+                      <p className="text-gray-500 text-[10px]">{pl.plantilla_items?.length || 0} ítems · usado {pl.usos || 0} veces</p>
+                    </div>
+                    <span className="text-blue-400 text-[11px] font-semibold shrink-0">Usar →</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* confirmación plantilla aplicada */}
+            {plantillaAplicada && (
+              <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl"
+                style={{ background: 'rgba(34,197,94,.1)', border: '1px solid rgba(34,197,94,.2)' }}>
+                <Check size={13} className="text-green-400 shrink-0" />
+                <p className="text-green-400 text-[12px]">Plantilla <strong>{plantillaAplicada}</strong> cargada — podés editar los ítems en el siguiente paso</p>
+              </div>
+            )}
+          </div>
           <p className="text-gray-400 text-[13px]">¿Para quién es el presupuesto?</p>
 
           <div className="flex gap-2 p-1 rounded-2xl" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
@@ -192,7 +335,7 @@ export default function NuevoPresupuesto() {
           </div>
 
           <button onClick={() => setStep(2)}
-            disabled={modoCliente === 'existente' && !clienteId && clientes.length > 0}
+            disabled={!titulo.trim() || (modoCliente === 'existente' && !clienteId && clientes.length > 0)}
             className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-2 disabled:opacity-50"
             style={{ background: '#3B82F6' }}>
             Siguiente → Agregar ítems
@@ -319,6 +462,7 @@ export default function NuevoPresupuesto() {
           <p className="text-gray-400 text-[13px]">Revisá antes de guardar</p>
 
           <div className="rounded-2xl p-5 text-center" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            {titulo && <p className="text-blue-400 font-semibold text-[14px] mb-1">{titulo}</p>}
             <p className="text-gray-500 text-[12px] mb-1">Total presupuestado</p>
             <p className="text-white font-bold text-[36px]">{fmt(total)}</p>
             <div className="flex justify-center gap-6 mt-3">

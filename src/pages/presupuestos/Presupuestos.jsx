@@ -91,13 +91,15 @@ export default function Presupuestos() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
                       <span className="text-white font-semibold text-[14px] truncate">
-                        {p.clientes?.nombre || 'Sin cliente'}
+                        {p.titulo || p.clientes?.nombre || 'Sin descripción'}
                       </span>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
                         style={{ background: st.bg, color: st.color }}>{st.label}</span>
                     </div>
                     <p className="text-white font-bold text-[18px] leading-tight">{fmt(p.total)}</p>
-                    <p className="text-gray-500 text-[11px] mt-0.5">Pres. #{p.numero} · {fecha}</p>
+                    <p className="text-gray-500 text-[11px] mt-0.5">
+                      {p.titulo && p.clientes?.nombre ? `${p.clientes.nombre} · ` : ''}Pres. #{p.numero} · {fecha}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #1E1E2E' }}>

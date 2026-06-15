@@ -13,25 +13,9 @@ export default function Estadisticas() {
   const [loading, setLoading] = useState(true)
   const [periodo, setPeriodo] = useState('mes')
 
-  if (!tieneFeature(plan, 'estadisticas')) return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 pb-24" style={{ background: '#0D0D14' }}>
-      <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
-        style={{ background: 'rgba(59,130,246,.15)', border: '1px solid rgba(59,130,246,.3)' }}>
-        <span className="text-4xl">🔒</span>
-      </div>
-      <div className="text-center">
-        <p className="text-white font-bold text-[18px] mb-2">Estadísticas avanzadas</p>
-        <p className="text-gray-400 text-[14px]">Esta función está disponible desde el plan Profesional.</p>
-      </div>
-      <div className="rounded-2xl p-4 w-full text-center" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
-        <p className="text-gray-500 text-[12px] mb-1">Tu plan actual</p>
-        <p className="text-white font-bold text-[16px]">Básico</p>
-      </div>
-      <button onClick={() => navigate(-1)} className="text-gray-500 text-[13px] underline">Volver</button>
-    </div>
-  )
-
-  useEffect(() => { cargar() }, [periodo])
+  useEffect(() => {
+    if (tieneFeature(plan, 'estadisticas')) cargar()
+  }, [periodo, plan])
 
   async function cargar() {
     setLoading(true)
@@ -66,6 +50,24 @@ export default function Estadisticas() {
     setDatos({ totalFacturado, totalCobrado, totalGastos, ganancia, totalHoras, valorHora, obrasActivas, conversionPct, cantPresups: presups?.length || 0 })
     setLoading(false)
   }
+
+  if (!tieneFeature(plan, 'estadisticas')) return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 px-8 pb-24" style={{ background: '#0D0D14' }}>
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
+        style={{ background: 'rgba(59,130,246,.15)', border: '1px solid rgba(59,130,246,.3)' }}>
+        <span className="text-4xl">🔒</span>
+      </div>
+      <div className="text-center">
+        <p className="text-white font-bold text-[18px] mb-2">Estadísticas avanzadas</p>
+        <p className="text-gray-400 text-[14px]">Esta función está disponible desde el plan Profesional.</p>
+      </div>
+      <div className="rounded-2xl p-4 w-full text-center" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+        <p className="text-gray-500 text-[12px] mb-1">Tu plan actual</p>
+        <p className="text-white font-bold text-[16px]">Básico</p>
+      </div>
+      <button onClick={() => navigate(-1)} className="text-gray-500 text-[13px] underline">Volver</button>
+    </div>
+  )
 
   return (
     <div className="flex-1 overflow-y-auto pb-24" style={{ background: '#0D0D14' }}>

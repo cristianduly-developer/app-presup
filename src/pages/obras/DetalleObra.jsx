@@ -23,6 +23,7 @@ export default function DetalleObra() {
   const [modal, setModal] = useState(null) // 'pago' | 'gasto' | 'horas'
   const [form, setForm] = useState({})
   const [guardando, setGuardando] = useState(false)
+  const [errorModal, setErrorModal] = useState('')
 
   useEffect(() => { cargar() }, [id])
 
@@ -40,32 +41,42 @@ export default function DetalleObra() {
   }
 
   async function guardarModal() {
+    setErrorModal('')
+    // validaciones básicas
+    if (modal === 'pago' && (!form.monto || Number(form.monto) <= 0)) { setErrorModal('Ingresá un monto válido'); return }
+    if (modal === 'gasto' && (!form.descripcion?.trim() || !form.monto || Number(form.monto) <= 0)) { setErrorModal('Descripción y monto son obligatorios'); return }
+    if (modal === 'horas' && (!form.cantidad || Number(form.cantidad) <= 0)) { setErrorModal('Ingresá una cantidad de horas válida'); return }
+
     setGuardando(true)
     const { data: { user } } = await supabase.auth.getUser()
     const hoy = new Date().toISOString().split('T')[0]
+    let error
     if (modal === 'pago') {
-      await supabase.from('pagos').insert({ user_id: user.id, obra_id: id, monto: Number(form.monto), metodo: form.metodo || 'efectivo', fecha: form.fecha || hoy, notas: form.notas || '' })
+      ({ error } = await supabase.from('pagos').insert({ user_id: user.id, obra_id: id, monto: Number(form.monto), metodo: form.metodo || 'efectivo', fecha: form.fecha || hoy, notas: form.notas || '' }))
     } else if (modal === 'gasto') {
-      await supabase.from('gastos').insert({ user_id: user.id, obra_id: id, descripcion: form.descripcion, monto: Number(form.monto), categoria: form.categoria || 'material', fecha: form.fecha || hoy })
+      ({ error } = await supabase.from('gastos').insert({ user_id: user.id, obra_id: id, descripcion: form.descripcion, monto: Number(form.monto), categoria: form.categoria || 'material', fecha: form.fecha || hoy }))
     } else if (modal === 'horas') {
-      await supabase.from('horas').insert({ user_id: user.id, obra_id: id, cantidad: Number(form.cantidad), descripcion: form.descripcion || '', fecha: form.fecha || hoy })
+      ({ error } = await supabase.from('horas').insert({ user_id: user.id, obra_id: id, cantidad: Number(form.cantidad), descripcion: form.descripcion || '', fecha: form.fecha || hoy }))
     }
-    setModal(null); setForm({})
     setGuardando(false)
+    if (error) { setErrorModal('No se pudo guardar. Intentá de nuevo.'); return }
+    setModal(null); setForm({})
     cargar()
   }
 
-  async function subirFoto(e) {
+  async function subirFoto(e, etapa) {
     const file = e.target.files[0]
     if (!file) return
+    if (file.size > 10 * 1024 * 1024) { alert('La foto no puede superar 10MB'); return }
     const { data: { user } } = await supabase.auth.getUser()
-    const path = `${user.id}/${id}/${Date.now()}_${file.name}`
-    const { data: upload } = await supabase.storage.from('fotos-obras').upload(path, file)
-    if (upload) {
-      const { data: { publicUrl } } = supabase.storage.from('fotos-obras').getPublicUrl(path)
-      await supabase.from('fotos').insert({ user_id: user.id, obra_id: id, url: publicUrl, etapa: 'durante' })
-      cargar()
-    }
+    // verificar ownership antes de subir
+    if (obra.user_id !== user.id) return
+    const path = `${user.id}/${id}/${etapa}_${Date.now()}`
+    const { data: upload, error } = await supabase.storage.from('fotos-obras').upload(path, file)
+    if (error || !upload) { alert('No se pudo subir la foto. Intentá de nuevo.'); return }
+    // guardar el path en lugar de la URL pública (bucket privado)
+    await supabase.from('fotos').insert({ user_id: user.id, obra_id: id, url: path, etapa })
+    cargar()
   }
 
   async function cambiarStatus(status) {
@@ -237,23 +248,7 @@ export default function DetalleObra() {
       )}
 
       {/* ── FOTOS ── */}
-      {tab === 'Fotos' && (
-        <div className="px-4">
-          <label className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[13px] font-semibold mb-3 cursor-pointer"
-            style={{ background: 'rgba(168,85,247,.12)', color: '#A855F7', border: '1px dashed rgba(168,85,247,.3)' }}>
-            <Camera size={16} /> Subir foto
-            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={subirFoto} />
-          </label>
-          {fotos.length === 0
-            ? <p className="text-gray-600 text-[13px] text-center py-6">Sin fotos cargadas</p>
-            : <div className="grid grid-cols-3 gap-2">
-                {fotos.map((f, i) => (
-                  <img key={i} src={f.url} alt="" className="w-full aspect-square object-cover rounded-xl" />
-                ))}
-              </div>
-          }
-        </div>
-      )}
+      {tab === 'Fotos' && <FotosTab fotos={fotos} onSubir={subirFoto} />}
 
       {/* ── NOTAS ── */}
       {tab === 'Notas' && (
@@ -319,8 +314,9 @@ export default function DetalleObra() {
               <p className="text-white font-bold text-[17px]">
                 {modal === 'pago' ? 'Registrar pago' : modal === 'gasto' ? 'Registrar gasto' : 'Registrar horas'}
               </p>
-              <button onClick={() => setModal(null)}><X size={20} className="text-gray-400" /></button>
+              <button onClick={() => { setModal(null); setErrorModal('') }}><X size={20} className="text-gray-400" /></button>
             </div>
+            {errorModal && <p className="text-red-400 text-[12px] mb-3 text-center">{errorModal}</p>}
 
             <div className="flex flex-col gap-3">
               {modal === 'pago' && <>
@@ -349,6 +345,78 @@ export default function DetalleObra() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+const ETAPAS = [
+  { key: 'antes',   label: 'Antes',   color: '#F97316' },
+  { key: 'durante', label: 'Durante', color: '#3B82F6' },
+  { key: 'final',   label: 'Final',   color: '#22C55E' },
+]
+
+function FotosTab({ fotos, onSubir }) {
+  const [etapaActiva, setEtapaActiva] = useState('durante')
+  const [urls, setUrls] = useState({})
+  const filtradas = fotos.filter(f => f.etapa === etapaActiva)
+  const etapa = ETAPAS.find(e => e.key === etapaActiva)
+
+  useEffect(() => {
+    async function generarUrls() {
+      const nuevas = {}
+      await Promise.all(filtradas.map(async f => {
+        if (!f.url) return
+        // si ya es una URL completa (fotos viejas con bucket público), usarla directo
+        if (f.url.startsWith('http')) { nuevas[f.url] = f.url; return }
+        const { data } = await supabase.storage.from('fotos-obras').createSignedUrl(f.url, 3600)
+        if (data?.signedUrl) nuevas[f.url] = data.signedUrl
+      }))
+      setUrls(prev => ({ ...prev, ...nuevas }))
+    }
+    if (filtradas.length > 0) generarUrls()
+  }, [etapaActiva, fotos])
+
+  return (
+    <div className="px-4">
+      {/* selector etapa */}
+      <div className="flex gap-2 mb-4">
+        {ETAPAS.map(e => {
+          const cant = fotos.filter(f => f.etapa === e.key).length
+          return (
+            <button key={e.key} onClick={() => setEtapaActiva(e.key)}
+              className="flex-1 py-2.5 rounded-2xl text-[12px] font-semibold flex flex-col items-center gap-0.5"
+              style={{
+                background: etapaActiva === e.key ? e.color + '22' : '#161622',
+                color: etapaActiva === e.key ? e.color : '#6B7280',
+                border: `1px solid ${etapaActiva === e.key ? e.color + '55' : '#1E1E2E'}`,
+              }}>
+              {e.label}
+              {cant > 0 && <span className="text-[10px] opacity-70">{cant} foto{cant !== 1 ? 's' : ''}</span>}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* botón subir */}
+      <label className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[13px] font-semibold mb-4 cursor-pointer"
+        style={{ background: etapa.color + '18', color: etapa.color, border: `1px dashed ${etapa.color}55` }}>
+        <Camera size={16} /> Subir foto ({etapa.label.toLowerCase()})
+        <input type="file" accept="image/*" capture="environment" className="hidden"
+          onChange={e => onSubir(e, etapaActiva)} />
+      </label>
+
+      {/* grilla */}
+      {filtradas.length === 0
+        ? <div className="flex flex-col items-center py-10 gap-2">
+            <span className="text-4xl">📷</span>
+            <p className="text-gray-600 text-[13px]">Sin fotos de {etapa.label.toLowerCase()} todavía</p>
+          </div>
+        : <div className="grid grid-cols-3 gap-2">
+            {filtradas.map((f, i) => (
+              <img key={i} src={urls[f.url] || f.url} alt="" className="w-full aspect-square object-cover rounded-xl" />
+            ))}
+          </div>
+      }
     </div>
   )
 }

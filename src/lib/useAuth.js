@@ -24,7 +24,17 @@ export function useAuth() {
 
   async function cargarPerfil(uid) {
     const { data } = await supabase.from('perfiles').select('*').eq('id', uid).single()
-    setPerfil(data)
+    if (data) {
+      setPerfil(data)
+    } else {
+      // perfil no existe (trigger falló) → lo creamos ahora
+      const { data: { user } } = await supabase.auth.getUser()
+      const nombre = user?.user_metadata?.full_name || user?.user_metadata?.name || ''
+      const email  = user?.email || ''
+      const { data: nuevo } = await supabase
+        .from('perfiles').insert({ id: uid, email, nombre }).select().single()
+      setPerfil(nuevo)
+    }
     setLoading(false)
   }
 
