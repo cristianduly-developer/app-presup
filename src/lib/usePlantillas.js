@@ -39,9 +39,7 @@ export function usePlantillas() {
   }
 
   async function incrementarUso(id) {
-    await supabase.rpc('incrementar_uso_plantilla', { p_id: id }).catch(() => {
-      supabase.from('plantillas').update({ usos: supabase.raw('usos + 1') }).eq('id', id)
-    })
+    await supabase.rpc('incrementar_uso_plantilla', { p_id: id })
   }
 
   return { plantillas, loading, cargar, crear, eliminar, incrementarUso }

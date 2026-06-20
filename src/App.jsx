@@ -64,6 +64,13 @@ export default function App() {
 
   useEffect(() => { verificar() }, [verificar])
 
+  // Re-verificar suscripción cada 30 minutos mientras la app está abierta
+  useEffect(() => {
+    if (!user) return
+    const interval = setInterval(verificar, 30 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [user?.id])
+
   if (loading || (user && checkingAcceso)) return <Splash />
 
   const tieneAcceso   = !user ? false : suscripcion?.tiene_acceso === true
