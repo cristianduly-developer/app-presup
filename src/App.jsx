@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import * as Sentry from '@sentry/react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/useAuth'
 import { verificarSuscripcion } from './lib/useSuscripcion'
@@ -92,6 +93,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ToastBanner />
       <NotifBanner notif={notif} onClose={() => setNotif(null)} />
       <Routes>
         {/* link público y PDF — sin auth */}
@@ -157,6 +159,36 @@ export default function App() {
         } />
       </Routes>
     </BrowserRouter>
+  )
+}
+
+function ToastBanner() {
+  const [toast, setToast] = useState(null)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      clearTimeout(timerRef.current)
+      setToast(e.detail)
+      timerRef.current = setTimeout(() => setToast(null), 4000)
+    }
+    window.addEventListener('app:toast', handler)
+    return () => { window.removeEventListener('app:toast', handler); clearTimeout(timerRef.current) }
+  }, [])
+
+  if (!toast) return null
+  const isError = toast.type === 'error'
+  return (
+    <div className="fixed top-4 left-4 right-4 z-[300] rounded-2xl px-4 py-3 flex items-center gap-3"
+      style={{
+        background: isError ? '#EF4444' : '#22C55E',
+        boxShadow: `0 8px 32px ${isError ? 'rgba(239,68,68,.4)' : 'rgba(34,197,94,.4)'}`,
+        maxWidth: 430, margin: '0 auto',
+      }}>
+      <span className="text-xl">{isError ? '⚠️' : '✓'}</span>
+      <p className="text-white font-semibold text-[13px] flex-1">{toast.msg}</p>
+      <button onClick={() => setToast(null)} className="text-white/70 text-lg leading-none">✕</button>
+    </div>
   )
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
+import { showToast } from './toast'
 
 export function usePresupuestos() {
   const [presupuestos, setPresupuestos] = useState([])
@@ -11,10 +12,19 @@ export function usePresupuestos() {
     setLoading(true)
     const { data } = await supabase
       .from('presupuestos')
-      .select(`*, clientes(nombre, telefono, direccion), presupuesto_items(*), pagos(monto)`)
+      .select(`id, numero, titulo, status, total, fecha_vence, fecha_envio, created_at, token_publico, vigencia_dias, cliente_id, clientes(nombre, telefono), pagos(monto)`)
       .order('created_at', { ascending: false })
     setPresupuestos(data || [])
     setLoading(false)
+  }
+
+  async function cargarItems(presupuestoId) {
+    const { data } = await supabase
+      .from('presupuesto_items')
+      .select('*')
+      .eq('presupuesto_id', presupuestoId)
+      .order('orden')
+    return data || []
   }
 
   async function crear(datos, items) {
@@ -57,17 +67,22 @@ export function usePresupuestos() {
 
   async function actualizarStatus(id, status) {
     const extra = status === 'enviado' ? { fecha_envio: new Date().toISOString().split('T')[0] } : {}
-    await supabase.from('presupuestos').update({ status, ...extra }).eq('id', id)
+    const { error } = await supabase.from('presupuestos').update({ status, ...extra }).eq('id', id)
+    if (error) { showToast('No se pudo actualizar el estado. Intentá de nuevo.', 'error'); return { error } }
     await cargar()
+    return { error: null }
   }
 
   async function registrarPago(presupuestoId, obraId, monto, metodo = 'efectivo') {
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('pagos').insert({ user_id: user.id, presupuesto_id: presupuestoId, obra_id: obraId, monto, metodo, fecha: new Date().toISOString().split('T')[0] })
+    const { error } = await supabase.from('pagos').insert({ user_id: user.id, presupuesto_id: presupuestoId, obra_id: obraId, monto, metodo, fecha: new Date().toISOString().split('T')[0] })
+    if (error) { showToast('No se pudo registrar el pago. Intentá de nuevo.', 'error'); return { error } }
+    showToast('Pago registrado')
     await cargar()
+    return { error: null }
   }
 
-  return { presupuestos, loading, cargar, crear, actualizarStatus, registrarPago }
+  return { presupuestos, loading, cargar, cargarItems, crear, actualizarStatus, registrarPago }
 }
 
 export function usePresupuestoPublico(token) {

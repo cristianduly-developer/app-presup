@@ -29,7 +29,7 @@ export default function Presupuestos() {
   const [busqueda, setBusqueda] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const navigate = useNavigate()
-  const { presupuestos, loading, cargar, crear } = usePresupuestos()
+  const { presupuestos, loading, cargar, cargarItems, crear } = usePresupuestos()
 
   const hoy = new Date(); hoy.setHours(0,0,0,0)
   function diasParaVencer(p) {
@@ -68,7 +68,8 @@ export default function Presupuestos() {
 
   async function duplicar(e, p) {
     e.stopPropagation()
-    const items = (p.presupuesto_items || []).map(it => ({
+    const rawItems = await cargarItems(p.id)
+    const items = rawItems.map(it => ({
       tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad,
       cantidad: it.cantidad, precio_unit: it.precio_unit,
     }))

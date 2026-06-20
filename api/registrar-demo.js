@@ -4,6 +4,17 @@ const DEMO_DIAS = 28
 const APP_ID    = 'app-presup'
 const OWNER_ID  = 'd8eef2e2-7e07-4ec9-9c6e-766addf89cc5'
 
+// Rate limit: máx 3 registros por IP por hora
+const ipLog = new Map()
+function isRateLimited(ip) {
+  const ahora = Date.now()
+  const ventana = 60 * 60 * 1000 // 1 hora
+  const hits = (ipLog.get(ip) || []).filter(t => ahora - t < ventana)
+  hits.push(ahora)
+  ipLog.set(ip, hits)
+  return hits.length > 3
+}
+
 export default async function handler(req, res) {
   const origin = req.headers['origin'] || ''
   const allowed = process.env.APP_ORIGIN || 'https://app-presup.vercel.app'
@@ -15,6 +26,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' })
+
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown'
+  if (isRateLimited(ip)) return res.status(429).json({ ok: false, error: 'rate_limited' })
 
   const authHeader = req.headers['authorization'] || ''
   const token = authHeader.replace('Bearer ', '').trim()
