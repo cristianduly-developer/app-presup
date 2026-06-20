@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/useAuth'
 import { verificarSuscripcion } from './lib/useSuscripcion'
 import { supabase } from './lib/supabase'
+
+const WA_SOPORTE = '5491140902990'
 import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
@@ -51,8 +53,8 @@ export default function App() {
   }, [user?.id])
 
   // Verificar suscripción cada vez que hay un usuario logueado
-  useEffect(() => {
-    if (!user) { setSuscripcion(null); return }
+  const verificar = useCallback(() => {
+    if (!user) { setSuscripcion(null); setCheckingAcceso(false); return }
     setCheckingAcceso(true)
     verificarSuscripcion(user.email).then(result => {
       setSuscripcion(result)
@@ -60,14 +62,26 @@ export default function App() {
     })
   }, [user?.id])
 
+  useEffect(() => { verificar() }, [verificar])
+
   if (loading || (user && checkingAcceso)) return <Splash />
 
-  const tieneAcceso = !user ? false : suscripcion?.tiene_acceso === true
-
+  const tieneAcceso   = !user ? false : suscripcion?.tiene_acceso === true
   const estadoSus     = suscripcion?.estado || null
   const diasRestantes = suscripcion?.dias_restantes ?? null
-  const planRaw = suscripcion?.plan || 'basico'
-  const plan    = (planRaw === 'sincargo' || planRaw === 'demo') ? 'profesional' : planRaw
+  const planRaw       = suscripcion?.plan || 'basico'
+  const plan          = (planRaw === 'sincargo' || planRaw === 'demo') ? 'profesional' : planRaw
+
+  // Determine which no-access screen to show
+  const pantalla = !tieneAcceso
+    ? (suscripcion === null
+        ? 'registro'
+        : (estadoSus === 'demo' && (diasRestantes ?? 0) <= 0)
+          ? 'demo_vencido'
+          : (estadoSus === 'impago' || estadoSus === 'suspendido')
+            ? 'suspendido'
+            : 'registro')
+    : 'app'
 
   return (
     <BrowserRouter>
@@ -83,9 +97,17 @@ export default function App() {
             <div className="flex flex-col h-full" style={{ background: '#0D0D14' }}>
               <Login />
             </div>
-          ) : !tieneAcceso ? (
+          ) : pantalla === 'registro' ? (
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
-              <SinAcceso estado={estadoSus} diasRestantes={diasRestantes} email={user.email} />
+              <PantallaRegistro email={user.email} onRegistrado={verificar} />
+            </div>
+          ) : pantalla === 'demo_vencido' ? (
+            <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
+              <PantallaDemoVencido email={user.email} />
+            </div>
+          ) : pantalla === 'suspendido' ? (
+            <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
+              <PantallaSuspendida email={user.email} estado={estadoSus} />
             </div>
           ) : (
             <PlanContext.Provider value={plan}>
@@ -165,6 +187,143 @@ function PlaceholderPage() {
       <span className="text-5xl">🚧</span>
       <p className="text-white font-semibold">Próximamente</p>
       <p className="text-gray-500 text-sm">Esta pantalla está en desarrollo</p>
+    </div>
+  )
+}
+
+function PantallaRegistro({ email, onRegistrado }) {
+  const [cargando, setCargando] = useState(false)
+  const [error, setError] = useState('')
+
+  async function empezarDemo() {
+    setCargando(true)
+    setError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('no_auth')
+      const res = await fetch('/api/registrar-demo', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      })
+      if (!res.ok) throw new Error('error_servidor')
+      await new Promise(r => setTimeout(r, 1500))
+      onRegistrado()
+    } catch {
+      setError('Ocurrió un error. Intentá de nuevo.')
+      setCargando(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col min-h-full pb-12 px-5">
+      <div className="flex flex-col items-center pt-16 pb-8 text-center">
+        <div className="w-24 h-24 rounded-3xl flex items-center justify-center mb-5"
+          style={{ background: 'rgba(59,130,246,.15)', border: '2px solid rgba(59,130,246,.4)' }}>
+          <span className="text-5xl">🔧</span>
+        </div>
+        <h1 className="text-white font-bold text-[26px] mb-2">Probá App Presup</h1>
+        <p className="text-gray-400 text-[14px] max-w-xs">
+          28 días gratis con todas las funciones del plan Profesional. Sin tarjeta de crédito.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 mb-8">
+        {[
+          { icon: '📋', texto: 'Presupuestos ilimitados por 28 días' },
+          { icon: '🏗', texto: 'Gestión completa de obras y clientes' },
+          { icon: '📄', texto: 'Exportación a PDF' },
+          { icon: '💬', texto: 'Enviá por WhatsApp con un toque' },
+          { icon: '📊', texto: 'Estadísticas y reportes detallados' },
+        ].map(f => (
+          <div key={f.texto} className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+            style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            <span className="text-xl">{f.icon}</span>
+            <span className="text-gray-300 text-[13px]">{f.texto}</span>
+            <span className="ml-auto text-green-400 text-[12px] font-bold">✓</span>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={empezarDemo}
+        disabled={cargando}
+        className="w-full py-4 rounded-2xl font-bold text-[16px] text-white transition-all active:opacity-80 disabled:opacity-60"
+        style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', boxShadow: '0 4px 20px rgba(59,130,246,0.4)' }}>
+        {cargando ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Activando prueba...
+          </span>
+        ) : 'Empezar prueba gratis'}
+      </button>
+
+      {error && <p className="text-red-400 text-[12px] text-center mt-3">{error}</p>}
+
+      <button onClick={() => supabase.auth.signOut()}
+        className="text-gray-600 text-[11px] underline text-center mx-auto block mt-6">
+        Cerrar sesión ({email})
+      </button>
+    </div>
+  )
+}
+
+function PantallaDemoVencido({ email }) {
+  const waMsg = encodeURIComponent(`Hola! Se me venció la prueba de App Presup. Mi email: ${email}`)
+  return (
+    <div className="flex flex-col min-h-full pb-12 px-5 items-center justify-center text-center">
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
+        style={{ background: 'rgba(251,191,36,.12)', border: '1px solid rgba(251,191,36,.3)' }}>
+        <span className="text-4xl">⏳</span>
+      </div>
+      <h1 className="text-white font-bold text-[22px] mb-3">Tu prueba gratuita venció</h1>
+      <p className="text-gray-400 text-[14px] max-w-xs mb-8">
+        Gracias por probar App Presup. Activá un plan para seguir gestionando tus presupuestos y obras.
+      </p>
+      <a href={`https://wa.me/${WA_SOPORTE}?text=${waMsg}`} target="_blank" rel="noreferrer"
+        className="w-full py-4 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2 mb-4"
+        style={{ background: '#22C55E', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>
+        <span className="text-xl">💬</span>
+        Activar mi cuenta
+      </a>
+      <button onClick={() => supabase.auth.signOut()}
+        className="text-gray-600 text-[11px] underline">
+        Cerrar sesión ({email})
+      </button>
+    </div>
+  )
+}
+
+function PantallaSuspendida({ email, estado }) {
+  const waMsg = encodeURIComponent(
+    estado === 'impago'
+      ? `Hola! Quiero regularizar mi suscripción a App Presup. Mi email: ${email}`
+      : `Hola! Mi acceso a App Presup está suspendido. Mi email: ${email}`
+  )
+  return (
+    <div className="flex flex-col min-h-full pb-12 px-5 items-center justify-center text-center">
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
+        style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.3)' }}>
+        <span className="text-4xl">🔒</span>
+      </div>
+      <h1 className="text-white font-bold text-[22px] mb-3">
+        {estado === 'impago' ? 'Suscripción vencida' : 'Cuenta suspendida'}
+      </h1>
+      <p className="text-gray-400 text-[14px] max-w-xs mb-8">
+        {estado === 'impago'
+          ? 'Regularizá tu pago para reactivar el acceso a App Presup.'
+          : 'Contactá al soporte para resolver el problema con tu cuenta.'}
+      </p>
+      <a href={`https://wa.me/${WA_SOPORTE}?text=${waMsg}`} target="_blank" rel="noreferrer"
+        className="w-full py-4 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2 mb-4"
+        style={{ background: '#22C55E', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>
+        <span className="text-xl">💬</span>
+        Contactar soporte
+      </a>
+      <button onClick={() => supabase.auth.signOut()}
+        className="text-gray-600 text-[11px] underline">
+        Cerrar sesión ({email})
+      </button>
     </div>
   )
 }
