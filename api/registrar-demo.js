@@ -40,6 +40,7 @@ export default async function handler(req, res) {
   }
 
   const email = user.email.toLowerCase().trim()
+  const nombreGoogle = user.user_metadata?.full_name?.trim() || null
 
   const central = createClient(
     process.env.CENTRAL_URL,
@@ -77,7 +78,7 @@ export default async function handler(req, res) {
       .replace(/\b\w/g, c => c.toUpperCase())
     const { data: org, error: orgErr } = await central
       .from('organizaciones')
-      .insert({ nombre, email_contacto: email, owner_id: OWNER_ID })
+      .insert({ nombre: nombreGoogle || nombre, email_contacto: email, owner_id: OWNER_ID })
       .select('id')
       .single()
     if (orgErr || !org) {
@@ -115,7 +116,7 @@ export default async function handler(req, res) {
 
   // Notify admin
   try {
-    await central.from('notificaciones_admin').insert({ org_id: orgId, tipo: 'nueva_org' })
+    await central.from('notificaciones_admin').insert({ org_id: orgId, tipo: 'nueva_org', app_id: APP_ID })
     const fechaAlta = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -123,9 +124,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         from: 'onboarding@resend.dev',
         to: 'cristianduly@gmail.com',
-        subject: `🆕 Nueva cuenta demo — ${email}`,
+        subject: `🆕 Nueva cuenta demo — ${nombreGoogle ?? email}`,
         html: `<h2>🆕 Nueva cuenta demo en App Presup</h2>
           <table style="border-collapse:collapse;font-family:sans-serif;">
+            <tr><td style="padding:8px;font-weight:bold;">Nombre</td><td style="padding:8px;">${nombreGoogle ?? '—'}</td></tr>
             <tr><td style="padding:8px;font-weight:bold;">Email</td><td style="padding:8px;">${email}</td></tr>
             <tr><td style="padding:8px;font-weight:bold;">App</td><td style="padding:8px;">App Presup</td></tr>
             <tr><td style="padding:8px;font-weight:bold;">Plan</td><td style="padding:8px;">Profesional (demo)</td></tr>
