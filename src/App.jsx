@@ -4,7 +4,7 @@ import { useAuth } from './lib/useAuth'
 import { verificarSuscripcion } from './lib/useSuscripcion'
 import { supabase } from './lib/supabase'
 
-const WA_SOPORTE = '5491140902990'
+const WA_SOPORTE = '5492235767784'
 import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
