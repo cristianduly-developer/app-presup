@@ -23,7 +23,7 @@ export function useAuth() {
   }, [])
 
   async function cargarPerfil(uid) {
-    const { data } = await supabase.from('perfiles').select('*').eq('id', uid).single()
+    const { data } = await supabase.from('perfiles').select('*').eq('id', uid).maybeSingle()
     if (data) {
       setPerfil(data)
     } else {
@@ -32,7 +32,7 @@ export function useAuth() {
       const nombre = user?.user_metadata?.full_name || user?.user_metadata?.name || ''
       const email  = user?.email || ''
       const { data: nuevo } = await supabase
-        .from('perfiles').insert({ id: uid, email, nombre }).select().single()
+        .from('perfiles').upsert({ id: uid, email, nombre }, { onConflict: 'id', ignoreDuplicates: false }).select().single()
       setPerfil(nuevo)
     }
     setLoading(false)

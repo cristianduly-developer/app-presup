@@ -17,13 +17,27 @@ export default async function handler(req, res) {
   if (!token) return res.status(401).json({ ok: false, error: 'no_auth' })
 
   // Validate user token using local Supabase
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[registrar-demo] Missing Supabase env vars:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey })
+    return res.status(500).json({ ok: false, error: 'config_error', detail: 'missing_supabase_vars' })
+  }
+  if (!process.env.CENTRAL_URL || !process.env.CENTRAL_SERVICE_KEY) {
+    console.error('[registrar-demo] Missing Central env vars')
+    return res.status(500).json({ ok: false, error: 'config_error', detail: 'missing_central_vars' })
+  }
+
   const supabaseApp = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.VITE_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseKey,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   )
   const { data: { user }, error: userErr } = await supabaseApp.auth.getUser()
-  if (userErr || !user?.email) return res.status(401).json({ ok: false, error: 'no_auth' })
+  if (userErr || !user?.email) {
+    console.error('[registrar-demo] Auth error:', userErr?.message)
+    return res.status(401).json({ ok: false, error: 'no_auth' })
+  }
 
   const email = user.email.toLowerCase().trim()
 
