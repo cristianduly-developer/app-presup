@@ -27,7 +27,7 @@ export default function Mas({ plan }) {
   const waMsg = encodeURIComponent(`Hola! Necesito soporte para App-presup. Mi email: ${user?.email}`)
 
   return (
-    <div className="flex-1 overflow-y-auto pb-32" style={{ background: '#0D0D14' }}>
+    <div className="flex-1 overflow-y-auto" style={{ background: '#0D0D14', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)', minHeight: '100vh' }}>
 
       {/* header usuario */}
       <div className="px-4 pt-12 pb-5 flex items-center justify-between">
