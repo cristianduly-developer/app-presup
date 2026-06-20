@@ -13,49 +13,63 @@ export function useKpis() {
 
   async function cargar() {
     setLoading(true)
-    const hoy = new Date().toISOString().split('T')[0]
-    const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
-    const en3dias = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]
-    const [{ data: presups }, { data: obras }, { data: visitas }, { data: vencen }] = await Promise.all([
-      supabase.from('presupuestos').select('total, status, created_at').gte('created_at', inicioMes),
-      supabase.from('obras_resumen').select('*'),
-      supabase.from('visitas').select('*, clientes(nombre, telefono)').eq('fecha', hoy).order('hora'),
-      supabase.from('presupuestos').select('id, numero, titulo, fecha_vence, clientes(nombre)')
-        .in('status', ['enviado', 'borrador'])
-        .gte('fecha_vence', hoy)
-        .lte('fecha_vence', en3dias)
-        .order('fecha_vence'),
-    ])
+    const { data, error } = await supabase.rpc('get_dashboard_kpis')
 
-    const facturado = (presups || []).reduce((s, p) => s + (p.total || 0), 0)
-    const obrasList = obras || []
-    const cobrado = obrasList.reduce((s, o) => s + (o.cobrado || 0), 0)
-    const pendiente = obrasList.reduce((s, o) => s + (o.pendiente || 0), 0)
-    const gastosTotales = obrasList.reduce((s, o) => s + (o.gastos || 0), 0)
-    const ganancia = cobrado - gastosTotales
+    if (error || !data) {
+      console.error('[useKpis]', error)
+      setLoading(false)
+      return
+    }
 
-    // embudo
-    const statusList = ['borrador', 'enviado', 'aprobado', 'en_ejecucion', 'cobrada']
+    const obras = data.obras || []
+    const visitas = data.visitas || []
+
+    // Embudo: necesita presupuestos + obras por status
+    const { data: presups } = await supabase
+      .from('presupuestos')
+      .select('status, total')
+
     const embudoData = [
-      { label: 'Enviados',      status: 'enviado',      color: '#3B82F6' },
-      { label: 'Aprobados',     status: 'aprobado',     color: '#22C55E' },
-      { label: 'En ejecución',  status: 'en_ejecucion', color: '#F97316' },
-      { label: 'Pend. cobro',   status: 'pendiente_cobro', color: '#A855F7' },
-      { label: 'Cobrados',      status: 'cobrada',      color: '#14B8A6' },
-    ].map(e => ({
-      ...e,
-      count: obrasList.filter(o => o.status === e.status).length,
-      monto: obrasList.filter(o => o.status === e.status).reduce((s, o) => s + o.total, 0),
+      { label: 'Enviados',     status: 'enviado',         color: '#3B82F6' },
+      { label: 'Aprobados',    status: 'aprobado',        color: '#22C55E' },
+      { label: 'En ejecución', status: 'en_ejecucion',    color: '#F97316' },
+      { label: 'Pend. cobro',  status: 'pendiente_cobro', color: '#A855F7' },
+      { label: 'Cobrados',     status: 'cobrada',         color: '#14B8A6' },
+    ].map(e => {
+      const source = ['en_ejecucion', 'pendiente_cobro', 'cobrada'].includes(e.status)
+        ? obras
+        : (presups || [])
+      return {
+        ...e,
+        count: source.filter(o => o.status === e.status).length,
+        monto: source.filter(o => o.status === e.status).reduce((s, o) => s + (o.total || 0), 0),
+      }
+    })
+
+    // Visitas: adaptar estructura plana a la que espera Inicio
+    const visitsFormated = visitas.map(v => ({
+      ...v,
+      clientes: v.cliente_nombre ? { nombre: v.cliente_nombre, telefono: v.cliente_telefono } : null,
     }))
 
-    const activas = obrasList.filter(o => ['en_ejecucion', 'pendiente_cobro'].includes(o.status))
+    // Por vencer: adaptar estructura
+    const porVencerFormated = (data.por_vencer || []).map(p => ({
+      ...p,
+      clientes: p.cliente_nombre ? { nombre: p.cliente_nombre } : null,
+    }))
 
-    setKpis({ facturado, cobrado, pendiente, ganancia, obrasActivas: activas.length })
-    setAgenda(visitas || [])
+    setKpis({
+      facturado: data.facturado || 0,
+      cobrado:   data.cobrado   || 0,
+      pendiente: data.pendiente || 0,
+      ganancia:  data.ganancia  || 0,
+      obrasActivas: obras.length,
+    })
+    setAgenda(visitsFormated)
     setEmbudo(embudoData)
-    setObrasEjecucion(activas)
-    setPorVencer(vencen || [])
+    setObrasEjecucion(obras)
+    setPorVencer(porVencerFormated)
     setLoading(false)
   }
 
