@@ -56,7 +56,7 @@ export default function App() {
   const verificar = useCallback(() => {
     if (!user) { setSuscripcion(null); setCheckingAcceso(false); return }
     setCheckingAcceso(true)
-    verificarSuscripcion(user.email).then(result => {
+    verificarSuscripcion().then(result => {
       setSuscripcion(result)
       setCheckingAcceso(false)
     })

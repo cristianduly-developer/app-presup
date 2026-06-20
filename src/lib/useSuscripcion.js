@@ -1,21 +1,16 @@
-// Verifica acceso contra el Supabase Central del SaaS
-const CENTRAL_URL = 'https://ngymvfvlknaltsvsrvjm.supabase.co'
-const CENTRAL_KEY = 'sb_publishable_CJQPQElcEzA9CACfuNllYg_Pe9lwvXy'
-const APP_ID      = 'app-presup'
+import { supabase } from './supabase'
 
-export async function verificarSuscripcion(email) {
+export async function verificarSuscripcion() {
   try {
-    const res = await fetch(`${CENTRAL_URL}/rest/v1/rpc/verificar_acceso_email`, {
-      method:  'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey':        CENTRAL_KEY,
-        'Authorization': `Bearer ${CENTRAL_KEY}`,
-      },
-      body: JSON.stringify({ email_param: email, app_id_param: APP_ID }),
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) return null
+
+    const res = await fetch('/api/verificar-acceso', {
+      headers: { 'Authorization': `Bearer ${token}` },
     })
-    const data = await res.json()
-    return Array.isArray(data) ? (data[0] || null) : null
+    if (!res.ok) return null
+    return await res.json()
   } catch {
     return null
   }
