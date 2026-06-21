@@ -3,14 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Search, X, Check } from 'lucide-react'
 import { useClientes } from '../../lib/useClientes'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
-
-function waMe(tel) {
-  const d = tel.replace(/\D/g, '')
-  if (d.startsWith('54')) return `https://wa.me/${d}`
-  if (d.startsWith('0')) return `https://wa.me/54${d.slice(1)}`
-  return `https://wa.me/54${d}`
-}
+import { fmt, waMe } from '../../lib/fmt'
 
 const CLASIFICACION = {
   excelente: { label: 'Excelente',  color: '#22C55E', emoji: '🟢' },

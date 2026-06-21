@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
 import { usePlan, LIMITES, tieneFeature } from '../../lib/PlanContext'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../../lib/fmt'
 
 const ITEM_VACIO   = { tipo: 'mano_obra', descripcion: '', unidad: 'global', cantidad: 1, precio_unit: 0 }
 const SECCION_VACIA = { tipo: 'seccion', descripcion: '', unidad: '', cantidad: 0, precio_unit: 0 }

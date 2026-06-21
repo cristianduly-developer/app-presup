@@ -5,13 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
 import { usePlan, tieneFeature } from '../../lib/PlanContext'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
-function fmtCorto(n) {
-  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000)     return '$' + (n / 1_000).toFixed(0) + 'k'
-  return fmt(n)
-}
-function fmtFecha(d) { return d ? new Date(d).toLocaleDateString('es-AR') : '' }
+import { fmt, fmtCorto, fmtFecha } from '../../lib/fmt'
 
 const PERIODOS = [
   { id: 'esta_semana', label: 'Esta semana' },

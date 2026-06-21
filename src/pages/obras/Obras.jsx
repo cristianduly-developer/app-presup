@@ -16,7 +16,7 @@ const STATUS_MAP = {
 }
 const STATUS_COLOR = { en_ejecucion: '#22C55E', pendiente_cobro: '#F97316', cobrada: '#3B82F6', presupuestada: '#6B7280', finalizada: '#14B8A6' }
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../../lib/fmt'
 
 export default function Obras() {
   const [filtro, setFiltro] = useState('Todas')

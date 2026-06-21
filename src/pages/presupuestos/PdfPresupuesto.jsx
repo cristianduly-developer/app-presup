@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
-function fmtFecha(d) { return d ? new Date(d).toLocaleDateString('es-AR') : '' }
+import { fmt, fmtFecha } from '../../lib/fmt'
 
 export default function PdfPresupuesto() {
   const { id } = useParams()

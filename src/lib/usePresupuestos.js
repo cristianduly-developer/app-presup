@@ -2,19 +2,30 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import { showToast } from './toast'
 
+const TTL = 60_000
+let _cache = null
+let _cacheTs = 0
+
 export function usePresupuestos() {
-  const [presupuestos, setPresupuestos] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [presupuestos, setPresupuestos] = useState(_cache || [])
+  const [loading, setLoading] = useState(!_cache)
 
   useEffect(() => { cargar() }, [])
 
-  async function cargar() {
+  async function cargar(force = false) {
+    if (!force && _cache && Date.now() - _cacheTs < TTL) {
+      setPresupuestos(_cache)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     const { data } = await supabase
       .from('presupuestos')
       .select(`id, numero, titulo, status, total, fecha_vence, fecha_envio, created_at, token_publico, vigencia_dias, cliente_id, clientes(nombre, telefono), pagos(monto)`)
       .order('created_at', { ascending: false })
-    setPresupuestos(data || [])
+    _cache = data || []
+    _cacheTs = Date.now()
+    setPresupuestos(_cache)
     setLoading(false)
   }
 
@@ -59,7 +70,8 @@ export function usePresupuestos() {
       }
       return { error }
     }
-    await cargar()
+    _cacheTs = 0 // invalidar cache tras mutación
+    await cargar(true)
     return { data: presup }
   }
 
@@ -67,7 +79,8 @@ export function usePresupuestos() {
     const extra = status === 'enviado' ? { fecha_envio: new Date().toISOString().split('T')[0] } : {}
     const { error } = await supabase.from('presupuestos').update({ status, ...extra }).eq('id', id)
     if (error) { showToast('No se pudo actualizar el estado. Intentá de nuevo.', 'error'); return { error } }
-    await cargar()
+    _cacheTs = 0
+    await cargar(true)
     return { error: null }
   }
 
@@ -76,6 +89,7 @@ export function usePresupuestos() {
     const { error } = await supabase.from('pagos').insert({ user_id: user.id, presupuesto_id: presupuestoId, obra_id: obraId, monto, metodo, fecha: new Date().toISOString().split('T')[0] })
     if (error) { showToast('No se pudo registrar el pago. Intentá de nuevo.', 'error'); return { error } }
     showToast('Pago registrado')
+    _cacheTs = 0
     await cargar()
     return { error: null }
   }

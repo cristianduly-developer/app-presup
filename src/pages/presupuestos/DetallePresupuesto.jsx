@@ -5,7 +5,7 @@ import CircleProgress from '../../components/ui/CircleProgress'
 import { supabase } from '../../lib/supabase'
 import { usePlan, tieneFeature } from '../../lib/PlanContext'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../../lib/fmt'
 
 const STATUS_STYLE = {
   enviado:  { label: 'Enviado',  bg: 'rgba(59,130,246,.15)', color: '#3B82F6' },

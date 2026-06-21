@@ -3,20 +3,31 @@ import { supabase } from './supabase'
 import { LIMITES } from './PlanContext'
 import { showToast } from './toast'
 
+const TTL = 60_000
+let _cache = null
+let _cacheTs = 0
+
 export function useObras() {
-  const [obras, setObras] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [obras, setObras] = useState(_cache || [])
+  const [loading, setLoading] = useState(!_cache)
 
   useEffect(() => { cargar() }, [])
 
-  async function cargar() {
+  async function cargar(force = false) {
+    if (!force && _cache && Date.now() - _cacheTs < TTL) {
+      setObras(_cache)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     const { data } = await supabase
       .from('obras_resumen')
       .select('*')
       .order('fecha_inicio', { ascending: false })
       .limit(300)
-    setObras(data || [])
+    _cache = data || []
+    _cacheTs = Date.now()
+    setObras(_cache)
     setLoading(false)
   }
 
@@ -36,13 +47,15 @@ export function useObras() {
       }
       return { error }
     }
-    await cargar()
+    _cacheTs = 0
+    await cargar(true)
     return { data, error: null }
   }
 
   async function actualizarStatus(id, status) {
     await supabase.from('obras').update({ status }).eq('id', id)
-    await cargar()
+    _cacheTs = 0
+    await cargar(true)
   }
 
   async function registrarGasto(obraId, descripcion, monto, categoria = 'material') {
@@ -50,7 +63,8 @@ export function useObras() {
     const { error } = await supabase.from('gastos').insert({ user_id: user.id, obra_id: obraId, descripcion, monto, categoria, fecha: new Date().toISOString().split('T')[0] })
     if (error) { showToast('No se pudo registrar el gasto. Intentá de nuevo.', 'error'); return { error } }
     showToast('Gasto registrado')
-    await cargar()
+    _cacheTs = 0
+    await cargar(true)
     return { error: null }
   }
 
@@ -59,7 +73,8 @@ export function useObras() {
     const { error } = await supabase.from('horas').insert({ user_id: user.id, obra_id: obraId, cantidad, descripcion, fecha: new Date().toISOString().split('T')[0] })
     if (error) { showToast('No se pudieron registrar las horas. Intentá de nuevo.', 'error'); return { error } }
     showToast('Horas registradas')
-    await cargar()
+    _cacheTs = 0
+    await cargar(true)
     return { error: null }
   }
 

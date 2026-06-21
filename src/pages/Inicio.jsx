@@ -4,7 +4,7 @@ import CircleProgress from '../components/ui/CircleProgress'
 import { useKpis } from '../lib/useKpis'
 import { useAuth } from '../lib/useAuth'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../lib/fmt'
 
 function Sparkline({ data, color }) {
   if (!data?.length) return null

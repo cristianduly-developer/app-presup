@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePresupuestoPublico } from '../lib/usePresupuestos'
 import CircleProgress from '../components/ui/CircleProgress'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../lib/fmt'
 
 export default function LinkPublico() {
   const { token } = useParams()

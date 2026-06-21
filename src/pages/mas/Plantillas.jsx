@@ -5,7 +5,7 @@ import { usePlantillas } from '../../lib/usePlantillas'
 import { useAuth } from '../../lib/useAuth'
 import { usePlan, tieneFeature } from '../../lib/PlanContext'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../../lib/fmt'
 
 const OFICIOS_EMOJI = {
   plomero: '💧', gasista: '🔥', electricista: '⚡', pintor: '🎨',

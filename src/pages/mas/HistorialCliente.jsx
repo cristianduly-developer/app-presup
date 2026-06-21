@@ -3,15 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
-function fmtFecha(s) { return s ? new Date(s).toLocaleDateString('es-AR') : '' }
-
-function waMe(tel) {
-  const d = tel.replace(/\D/g, '')
-  if (d.startsWith('54')) return `https://wa.me/${d}`
-  if (d.startsWith('0')) return `https://wa.me/54${d.slice(1)}`
-  return `https://wa.me/54${d}`
-}
+import { fmt, fmtFecha, waMe } from '../../lib/fmt'
 
 const PRES_STATUS = {
   borrador:  { label: 'Borrador',   color: '#6B7280' },

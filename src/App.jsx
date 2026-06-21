@@ -9,6 +9,7 @@ const WA_SOPORTE = '5492235767784'
 import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 import Login from './pages/Login'
 
 const Inicio              = lazy(() => import('./pages/Inicio'))
@@ -95,6 +96,7 @@ export default function App() {
     <BrowserRouter>
       <ToastBanner />
       <NotifBanner notif={notif} onClose={() => setNotif(null)} />
+      <ErrorBoundary>
       <Suspense fallback={<Splash />}>
       <Routes>
         {/* link público y PDF — sin auth */}
@@ -160,6 +162,7 @@ export default function App() {
         } />
       </Routes>
       </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

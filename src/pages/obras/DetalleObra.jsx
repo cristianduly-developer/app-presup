@@ -5,7 +5,7 @@ import CircleProgress from '../../components/ui/CircleProgress'
 import { supabase } from '../../lib/supabase'
 import { useClientes } from '../../lib/useClientes'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../../lib/fmt'
 
 const TABS = ['Resumen', 'Pagos', 'Gastos', 'Horas', 'Fotos', 'Notas']
 

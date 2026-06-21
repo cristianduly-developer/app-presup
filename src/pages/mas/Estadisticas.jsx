@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { usePlan, tieneFeature } from '../../lib/PlanContext'
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
+import { fmt } from '../../lib/fmt'
 
 export default function Estadisticas() {
   const navigate = useNavigate()

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, RefreshCw, X } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
 import { usePresupuestos } from '../../lib/usePresupuestos'
+import { fmt, waMe } from '../../lib/fmt'
 
 const FILTROS = ['Pendientes', 'Todos', 'Borrador', 'Enviado', 'Aprobado', 'Rechazado', 'Vencido']
 
@@ -31,14 +32,14 @@ export default function Presupuestos() {
   const navigate = useNavigate()
   const { presupuestos, loading, cargar, cargarItems, crear } = usePresupuestos()
 
-  const hoy = new Date(); hoy.setHours(0,0,0,0)
+  const hoy = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d }, [])
   function diasParaVencer(p) {
     if (!p.fecha_vence) return Infinity
     return Math.ceil((new Date(p.fecha_vence + 'T00:00:00') - hoy) / 86400000)
   }
 
   const STATUS_ORDEN = { enviado: 0, borrador: 1, aprobado: 2, rechazado: 3, vencido: 4 }
-  const lista = presupuestos
+  const lista = useMemo(() => presupuestos
     .filter(p => {
       if (filtro === 'Todos') return true
       if (filtro === 'Pendientes') return ['enviado', 'borrador'].includes(p.status)
@@ -48,7 +49,6 @@ export default function Presupuestos() {
       const da = STATUS_ORDEN[a.status] ?? 5
       const db = STATUS_ORDEN[b.status] ?? 5
       if (da !== db) return da - db
-      // enviados: por vencimiento ASC (más próximo primero)
       if (a.status === 'enviado' && b.status === 'enviado') {
         const va = a.fecha_vence ? new Date(a.fecha_vence).getTime() : Infinity
         const vb = b.fecha_vence ? new Date(b.fecha_vence).getTime() : Infinity
@@ -64,7 +64,7 @@ export default function Presupuestos() {
         p.clientes?.nombre?.toLowerCase().includes(q) ||
         String(p.numero).includes(q)
       )
-    })
+    }), [presupuestos, filtro, busqueda, hoy])
 
   async function duplicar(e, p) {
     e.stopPropagation()
