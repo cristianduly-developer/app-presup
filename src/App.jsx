@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import * as Sentry from '@sentry/react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/useAuth'
@@ -10,25 +10,25 @@ import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
 import Login from './pages/Login'
-import SinAcceso from './pages/SinAcceso'
-import Inicio from './pages/Inicio'
-import Agenda from './pages/agenda/Agenda'
-import Presupuestos from './pages/presupuestos/Presupuestos'
-import NuevoPresupuesto from './pages/presupuestos/NuevoPresupuesto'
-import DetallePresupuesto from './pages/presupuestos/DetallePresupuesto'
-import Obras from './pages/obras/Obras'
-import NuevaObra from './pages/obras/NuevaObra'
-import DetalleObra from './pages/obras/DetalleObra'
-import RegistroRapido from './pages/RegistroRapido'
-import Mas from './pages/mas/Mas'
-import Clientes from './pages/mas/Clientes'
-import HistorialCliente from './pages/mas/HistorialCliente'
-import Estadisticas from './pages/mas/Estadisticas'
-import Plantillas from './pages/mas/Plantillas'
-import Configuracion from './pages/mas/Configuracion'
-import Reportes from './pages/mas/Reportes'
-import LinkPublico from './pages/LinkPublico'
-import PdfPresupuesto from './pages/presupuestos/PdfPresupuesto'
+
+const Inicio              = lazy(() => import('./pages/Inicio'))
+const Agenda              = lazy(() => import('./pages/agenda/Agenda'))
+const Presupuestos        = lazy(() => import('./pages/presupuestos/Presupuestos'))
+const NuevoPresupuesto    = lazy(() => import('./pages/presupuestos/NuevoPresupuesto'))
+const DetallePresupuesto  = lazy(() => import('./pages/presupuestos/DetallePresupuesto'))
+const PdfPresupuesto      = lazy(() => import('./pages/presupuestos/PdfPresupuesto'))
+const Obras               = lazy(() => import('./pages/obras/Obras'))
+const NuevaObra           = lazy(() => import('./pages/obras/NuevaObra'))
+const DetalleObra         = lazy(() => import('./pages/obras/DetalleObra'))
+const RegistroRapido      = lazy(() => import('./pages/RegistroRapido'))
+const Mas                 = lazy(() => import('./pages/mas/Mas'))
+const Clientes            = lazy(() => import('./pages/mas/Clientes'))
+const HistorialCliente    = lazy(() => import('./pages/mas/HistorialCliente'))
+const Estadisticas        = lazy(() => import('./pages/mas/Estadisticas'))
+const Plantillas          = lazy(() => import('./pages/mas/Plantillas'))
+const Configuracion       = lazy(() => import('./pages/mas/Configuracion'))
+const Reportes            = lazy(() => import('./pages/mas/Reportes'))
+const LinkPublico         = lazy(() => import('./pages/LinkPublico'))
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -95,6 +95,7 @@ export default function App() {
     <BrowserRouter>
       <ToastBanner />
       <NotifBanner notif={notif} onClose={() => setNotif(null)} />
+      <Suspense fallback={<Splash />}>
       <Routes>
         {/* link público y PDF — sin auth */}
         <Route path="/p/:token" element={<LinkPublico />} />
@@ -158,6 +159,7 @@ export default function App() {
           )
         } />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

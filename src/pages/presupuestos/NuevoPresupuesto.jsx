@@ -166,23 +166,28 @@ export default function NuevoPresupuesto() {
       const fechaVence = vigencia
         ? new Date(Date.now() + vigencia * 86400000).toISOString().split('T')[0] : null
 
-      await supabase.from('presupuesto_items').delete().eq('presupuesto_id', editarId)
-      await supabase.from('presupuestos').update({
-        titulo, cliente_id: cId || null, vigencia_dias: vigencia, notas_internas: notas,
-        total: total2, total_materiales: totalMat2, total_mano_obra: totalMO2,
-        margen_estimado: total2 - totalMat2, fecha_vence: fechaVence,
-      }).eq('id', editarId)
-      await supabase.from('presupuesto_items').insert(
-        filtrados.map((it, i) => ({
-          presupuesto_id: editarId,
-          tipo: it.tipo, descripcion: it.descripcion, unidad: it.unidad || '',
-          cantidad: it.tipo === 'seccion' ? 0 : it.cantidad,
+      const { error: editErr } = await supabase.rpc('actualizar_presupuesto', {
+        p_id:               editarId,
+        p_titulo:           titulo,
+        p_cliente_id:       cId || null,
+        p_vigencia_dias:    vigencia,
+        p_notas_internas:   notas,
+        p_total:            total2,
+        p_total_materiales: totalMat2,
+        p_total_mano_obra:  totalMO2,
+        p_margen_estimado:  total2 - totalMat2,
+        p_fecha_vence:      fechaVence,
+        p_items: filtrados.map((it, i) => ({
+          tipo:        it.tipo,
+          descripcion: it.descripcion,
+          unidad:      it.unidad || '',
+          cantidad:    it.tipo === 'seccion' ? 0 : it.cantidad,
           precio_unit: it.tipo === 'seccion' ? 0 : it.precio_unit,
-          subtotal: it.tipo === 'seccion' ? 0 : it.cantidad * it.precio_unit,
-          orden: i,
-        }))
-      )
+          orden:       i,
+        })),
+      })
       setGuardando(false)
+      if (editErr) { setLimiteError('No se pudo guardar. Intentá de nuevo.'); return }
       navigate(`/presupuestos/${editarId}`)
       return
     }

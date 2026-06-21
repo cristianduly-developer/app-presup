@@ -15,26 +15,29 @@ export function useObras() {
       .from('obras_resumen')
       .select('*')
       .order('fecha_inicio', { ascending: false })
+      .limit(300)
     setObras(data || [])
     setLoading(false)
   }
 
   async function crear(datos, plan = 'basico') {
-    const { data: { user } } = await supabase.auth.getUser()
-    const limite = LIMITES[plan]?.obras ?? 30
-    if (limite !== Infinity) {
-      const { count } = await supabase.from('obras')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .in('status', ['en_ejecucion', 'pendiente_cobro'])
-      if (count >= limite) {
-        return { error: { message: `Tu plan permite hasta ${limite} obras activas. Ya tenés ${count}.`, tipo: 'limite' } }
+    const limiteNum = LIMITES[plan]?.obras === Infinity ? 0 : (LIMITES[plan]?.obras ?? 30)
+    const { data, error } = await supabase.rpc('crear_obra_con_limite', {
+      p_nombre:         datos.nombre,
+      p_presupuesto_id: datos.presupuesto_id || null,
+      p_fecha_inicio:   datos.fecha_inicio || null,
+      p_direccion:      datos.direccion || null,
+      p_limite:         limiteNum,
+    })
+    if (error) {
+      if (error.message?.includes('LIMITE_PLAN')) {
+        const msg = error.message.replace('LIMITE_PLAN: ', '')
+        return { error: { message: msg, tipo: 'limite' } }
       }
+      return { error }
     }
-    const { data, error } = await supabase
-      .from('obras').insert({ ...datos, user_id: user.id }).select().single()
-    if (!error) await cargar()
-    return { data, error }
+    await cargar()
+    return { data, error: null }
   }
 
   async function actualizarStatus(id, status) {

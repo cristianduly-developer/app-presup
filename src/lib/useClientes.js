@@ -10,7 +10,7 @@ export function useClientes() {
   async function cargar() {
     setLoading(true)
     const { data } = await supabase
-      .from('clientes').select('*').order('nombre')
+      .from('clientes').select('*').order('nombre').limit(500)
     setClientes(data || [])
     setLoading(false)
   }
