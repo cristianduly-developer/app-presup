@@ -53,7 +53,7 @@ export default async function handler(req, res) {
 
   if (error) {
     console.error('[verificar-acceso] RPC error:', error)
-    return res.status(200).json(null)
+    return res.status(503).json({ ok: false, error: 'servicio_no_disponible' })
   }
 
   const acceso = Array.isArray(data) ? (data[0] ?? null) : null
