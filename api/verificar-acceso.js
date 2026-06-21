@@ -2,10 +2,21 @@ import { createClient } from '@supabase/supabase-js'
 
 const APP_ID = 'app-presup'
 
+// Rate limit: máx 30 verificaciones por IP por hora
+const ipLog = new Map()
+function isRateLimited(ip) {
+  const ahora = Date.now()
+  const ventana = 60 * 60 * 1000
+  const hits = (ipLog.get(ip) || []).filter(t => ahora - t < ventana)
+  hits.push(ahora)
+  ipLog.set(ip, hits)
+  return hits.length > 30
+}
+
 export default async function handler(req, res) {
   const origin = req.headers['origin'] || ''
   const allowed = process.env.APP_ORIGIN || 'https://app-presup.vercel.app'
-  if (origin === allowed || origin.endsWith('.vercel.app')) {
+  if (origin === allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -13,6 +24,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' })
+
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown'
+  if (isRateLimited(ip)) return res.status(429).json({ error: 'rate_limited' })
 
   const authHeader = req.headers['authorization'] || ''
   const token = authHeader.replace('Bearer ', '').trim()
