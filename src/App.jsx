@@ -10,6 +10,7 @@ import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import CreateModal from './components/ui/CreateModal'
 import ErrorBoundary from './components/ui/ErrorBoundary'
+import Onboarding from './pages/Onboarding'
 import Login from './pages/Login'
 
 const Inicio              = lazy(() => import('./pages/Inicio'))
@@ -73,6 +74,10 @@ export default function App() {
     return () => clearInterval(interval)
   }, [user?.id])
 
+  const [onboardingVisto, setOnboardingVisto] = useState(
+    () => !!localStorage.getItem('onboarding_seen')
+  )
+
   if (loading || (user && checkingAcceso)) return <Splash />
 
   const tieneAcceso   = !user ? false : suscripcion?.tiene_acceso === true
@@ -80,6 +85,15 @@ export default function App() {
   const diasRestantes = suscripcion?.dias_restantes ?? null
   const planRaw       = suscripcion?.plan || 'basico'
   const plan          = (planRaw === 'sincargo' || planRaw === 'demo') ? 'profesional' : planRaw
+
+  const nombreUsuario = user?.user_metadata?.full_name?.split(' ')[0]
+    || user?.email?.split('@')[0]
+    || 'ahí'
+
+  function finalizarOnboarding() {
+    localStorage.setItem('onboarding_seen', '1')
+    setOnboardingVisto(true)
+  }
 
   // Determine which no-access screen to show
   const pantalla = !tieneAcceso
@@ -120,6 +134,14 @@ export default function App() {
           ) : pantalla === 'suspendido' ? (
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
               <PantallaSuspendida email={user.email} estado={estadoSus} />
+            </div>
+          ) : !onboardingVisto ? (
+            <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
+              <Onboarding
+                nombre={nombreUsuario}
+                diasRestantes={diasRestantes}
+                onFinalizar={finalizarOnboarding}
+              />
             </div>
           ) : (
             <PlanContext.Provider value={plan}>
