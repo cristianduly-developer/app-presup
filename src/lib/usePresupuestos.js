@@ -50,7 +50,6 @@ export function usePresupuestos() {
 
     const { data: presup, error } = await supabase.rpc('crear_presupuesto', {
       p_user_id:          user.id,
-      p_titulo:           datos.titulo || '',
       p_cliente_id:       datos.cliente_id || null,
       p_vigencia_dias:    datos.vigencia_dias || 5,
       p_notas_internas:   datos.notas_internas || '',
@@ -70,7 +69,11 @@ export function usePresupuestos() {
       }
       return { error }
     }
-    _cacheTs = 0 // invalidar cache tras mutación
+    // guardar título por separado (la RPC existente no lo acepta como parámetro)
+    if (datos.titulo && presup?.id) {
+      await supabase.from('presupuestos').update({ titulo: datos.titulo }).eq('id', presup.id)
+    }
+    _cacheTs = 0
     await cargar(true)
     return { data: presup }
   }
