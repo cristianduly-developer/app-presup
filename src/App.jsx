@@ -274,15 +274,27 @@ function PantallaRegistro({ email, onRegistrado }) {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
       if (!token) throw new Error('no_auth')
+
       const res = await fetch('/api/registrar-demo', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       })
-      if (!res.ok) throw new Error('error_servidor')
-      await new Promise(r => setTimeout(r, 1500))
-      onRegistrado()
-    } catch {
-      setError('Ocurrió un error. Intentá de nuevo.')
+      const data = await res.json()
+      if (!res.ok || !data.ok) throw new Error(data.error || 'error_servidor')
+
+      // Reintentar verificación hasta 5 veces con espera entre intentos
+      // (el central SaaS puede tardar unos segundos en estar disponible)
+      for (let i = 0; i < 5; i++) {
+        await new Promise(r => setTimeout(r, 1500))
+        const result = await import('./lib/useSuscripcion').then(m => m.verificarSuscripcion())
+        if (result?.tiene_acceso) { onRegistrado(); return }
+      }
+
+      // Si después de los reintentos sigue sin acceso, avisar
+      setError('El acceso tardó más de lo esperado. Intentá recargar la página.')
+      setCargando(false)
+    } catch (e) {
+      setError(e.message === 'no_auth' ? 'Sesión expirada, volvé a ingresar.' : 'Ocurrió un error. Intentá de nuevo.')
       setCargando(false)
     }
   }
