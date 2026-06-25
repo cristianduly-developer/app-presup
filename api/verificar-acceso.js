@@ -25,6 +25,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' })
 
+  // Bearer token no debería superar los 2 KB
+  const authHeader2 = req.headers['authorization'] || ''
+  if (authHeader2.length > 2048) return res.status(400).json({ error: 'invalid_auth' })
+
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown'
   if (isRateLimited(ip)) return res.status(429).json({ error: 'rate_limited' })
 

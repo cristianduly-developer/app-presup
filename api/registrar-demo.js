@@ -20,7 +20,8 @@ async function isRateLimited(central, ip) {
 export default async function handler(req, res) {
   const origin = req.headers['origin'] || ''
   const allowed = process.env.APP_ORIGIN || 'https://app-presup.vercel.app'
-  if (origin === allowed || origin.endsWith('.vercel.app')) {
+  const localDev = /^https?:\/\/localhost(:\d+)?$/.test(origin)
+  if (origin === allowed || localDev) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -28,6 +29,10 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' })
+
+  // Rechazar bodies demasiado grandes (no esperamos body en este endpoint)
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10)
+  if (contentLength > 4096) return res.status(413).json({ ok: false, error: 'payload_too_large' })
 
   const authHeader = req.headers['authorization'] || ''
   const token = authHeader.replace('Bearer ', '').trim()
