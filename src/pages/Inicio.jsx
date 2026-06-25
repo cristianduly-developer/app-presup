@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Phone, ChevronRight, AlertTriangle } from 'lucide-react'
 import CircleProgress from '../components/ui/CircleProgress'
+import { KpiSkeleton } from '../components/ui/Skeleton'
 import { useKpis } from '../lib/useKpis'
 import { useAuth } from '../lib/useAuth'
 
@@ -82,20 +83,23 @@ export default function Inicio() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 px-4 mb-5">
-        {KPI.map(k => (
-          <div key={k.label} className="rounded-2xl p-4 flex flex-col"
-            style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
-            <span className="text-[11px] font-semibold mb-1" style={{ color: k.accent }}>{k.label}</span>
-            <span className="text-white font-bold text-[16px] leading-tight">{loading ? '...' : k.value}</span>
-            {k.sparkline
-              ? <Sparkline data={k.sparkline} color={k.accent} />
-              : <div className="mt-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: k.accent + '22' }}>
-                  <span style={{ color: k.accent }} className="text-[12px]">$</span>
-                </div>
-            }
-            <span className="text-[11px] mt-1" style={{ color: k.accent + 'CC' }}>{k.sub}</span>
-          </div>
-        ))}
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
+          : KPI.map(k => (
+            <div key={k.label} className="rounded-2xl p-4 flex flex-col"
+              style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+              <span className="text-[11px] font-semibold mb-1" style={{ color: k.accent }}>{k.label}</span>
+              <span className="text-white font-bold text-[16px] leading-tight">{k.value}</span>
+              {k.sparkline
+                ? <Sparkline data={k.sparkline} color={k.accent} />
+                : <div className="mt-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: k.accent + '22' }}>
+                    <span style={{ color: k.accent }} className="text-[12px]">$</span>
+                  </div>
+              }
+              <span className="text-[11px] mt-1" style={{ color: k.accent + 'CC' }}>{k.sub}</span>
+            </div>
+          ))
+        }
       </div>
 
       {/* acciones rápidas */}
