@@ -81,22 +81,22 @@ export default function Inicio() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 px-4 mb-5">
+      {/* KPIs — 2 columnas en mobile, 4 en desktop (más compacto) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 mb-5">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
           : KPI.map(k => (
-            <div key={k.label} className="rounded-2xl p-4 flex flex-col"
+            <div key={k.label} className="rounded-2xl p-4 md:p-3 flex flex-col"
               style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
               <span className="text-[11px] font-semibold mb-1" style={{ color: k.accent }}>{k.label}</span>
-              <span className="text-white font-bold text-[16px] leading-tight">{k.value}</span>
+              <span className="text-white font-bold text-[16px] md:text-[14px] leading-tight">{k.value}</span>
               {k.sparkline
                 ? <Sparkline data={k.sparkline} color={k.accent} />
-                : <div className="mt-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: k.accent + '22' }}>
-                    <span style={{ color: k.accent }} className="text-[12px]">$</span>
+                : <div className="mt-2 w-5 h-5 md:w-4 md:h-4 rounded-full flex items-center justify-center" style={{ background: k.accent + '22' }}>
+                    <span style={{ color: k.accent }} className="text-[10px]">$</span>
                   </div>
               }
-              <span className="text-[11px] mt-1" style={{ color: k.accent + 'CC' }}>{k.sub}</span>
+              <span className="text-[11px] mt-1 hidden md:block" style={{ color: k.accent + 'CC' }}>{k.sub}</span>
             </div>
           ))
         }
