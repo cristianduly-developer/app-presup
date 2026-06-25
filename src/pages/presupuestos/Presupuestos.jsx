@@ -16,15 +16,6 @@ const STATUS_STYLE = {
 }
 const STATUS_COLOR = { enviado: '#3B82F6', aprobado: '#22C55E', borrador: '#6B7280', vencido: '#EF4444', rechazado: '#EF4444' }
 
-function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR') }
-
-function waMe(tel) {
-  const d = tel.replace(/\D/g, '')
-  if (d.startsWith('54')) return `https://wa.me/${d}`
-  if (d.startsWith('0')) return `https://wa.me/54${d.slice(1)}`
-  return `https://wa.me/54${d}`
-}
-
 export default function Presupuestos() {
   const [filtro, setFiltro] = useState('Pendientes')
   const [busqueda, setBusqueda] = useState('')
