@@ -21,10 +21,22 @@ html, body, #root {
 #root {
   display: flex;
   flex-direction: column;
-  max-width: 430px;
-  margin: 0 auto;
   position: relative;
   overflow: hidden;
+}
+
+/* En mobile: centrado en columna angosta */
+@media (max-width: 767px) {
+  #root {
+    max-width: 430px;
+    margin: 0 auto;
+  }
+}
+
+/* En desktop: reducir el espacio top que en mobile sirve para el notch */
+@media (min-width: 768px) {
+  .pt-12 { padding-top: 1.5rem !important; }
+  .pt-10 { padding-top: 1.25rem !important; }
 }
 
 /* scrollbar */

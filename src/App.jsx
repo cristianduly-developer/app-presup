@@ -8,6 +8,7 @@ import { supabase } from './lib/supabase'
 const WA_SOPORTE = '5492235767784'
 import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
+import Sidebar from './components/ui/Sidebar'
 import CreateModal from './components/ui/CreateModal'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import Onboarding from './pages/Onboarding'
@@ -145,9 +146,11 @@ export default function App() {
             </div>
           ) : (
             <PlanContext.Provider value={plan}>
-            <div className="flex flex-col h-full relative">
+            <div className="flex h-full relative">
+              <Sidebar plan={plan} estadoSus={estadoSus} diasRestantes={diasRestantes} />
+              <div className="flex flex-col flex-1 min-w-0 relative">
               {estadoSus === 'demo' && diasRestantes != null && (
-                <div className="text-center py-2 text-[11px] font-semibold z-50"
+                <div className="text-center py-2 text-[11px] font-semibold z-50 md:hidden"
                   style={{ background: '#78350F', color: '#FCD34D' }}>
                   ⏳ Versión demo · vence en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}
                 </div>
@@ -178,6 +181,7 @@ export default function App() {
                   <CreateModal onClose={() => setShowCreate(false)} />
                 </>
               )}
+              </div>
             </div>
             </PlanContext.Provider>
           )

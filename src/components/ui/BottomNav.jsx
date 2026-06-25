@@ -13,7 +13,7 @@ export default function BottomNav({ onAdd }) {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50"
+    <nav className="md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50"
       style={{
         background: '#13131E',
         borderTop: '1px solid #1E1E2E',
