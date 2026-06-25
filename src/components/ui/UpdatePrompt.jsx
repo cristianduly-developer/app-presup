@@ -7,8 +7,9 @@ export default function UpdatePrompt() {
 
   function aplicarUpdate() {
     setActualizando(true)
-    // pequeño delay para que se vea la pantalla antes del reload
     setTimeout(() => updateServiceWorker(true), 400)
+    // si en 8 segundos no recargó, volver al estado anterior
+    setTimeout(() => setActualizando(false), 8000)
   }
 
   // Pantalla de carga mientras recarga
