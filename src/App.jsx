@@ -11,6 +11,7 @@ import BottomNav from './components/ui/BottomNav'
 import Sidebar from './components/ui/Sidebar'
 import CreateModal from './components/ui/CreateModal'
 import ErrorBoundary from './components/ui/ErrorBoundary'
+import UpdatePrompt from './components/ui/UpdatePrompt'
 import Onboarding from './pages/Onboarding'
 import Login from './pages/Login'
 
@@ -111,6 +112,7 @@ export default function App() {
     <BrowserRouter>
       <ToastBanner />
       <NotifBanner notif={notif} onClose={() => setNotif(null)} />
+      <UpdatePrompt />
       <ErrorBoundary>
       <Suspense fallback={<Splash />}>
       <Routes>
