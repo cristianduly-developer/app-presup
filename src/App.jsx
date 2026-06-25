@@ -34,7 +34,7 @@ const Reportes            = lazy(() => import('./pages/mas/Reportes'))
 const LinkPublico         = lazy(() => import('./pages/LinkPublico'))
 
 export default function App() {
-  const { user, loading } = useAuth()
+  const { user, loading, perfil } = useAuth()
   const [showCreate, setShowCreate] = useState(false)
   const [suscripcion, setSuscripcion] = useState(null)
   const [checkingAcceso, setCheckingAcceso] = useState(false)
@@ -136,7 +136,7 @@ export default function App() {
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
               <PantallaSuspendida email={user.email} estado={estadoSus} />
             </div>
-          ) : !onboardingVisto ? (
+          ) : !onboardingVisto && !perfil?.nombre ? (
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
               <Onboarding
                 nombre={nombreUsuario}
