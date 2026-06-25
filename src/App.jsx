@@ -67,10 +67,10 @@ export default function App() {
 
   useEffect(() => { verificar() }, [verificar])
 
-  // Re-verificar suscripción cada 30 minutos mientras la app está abierta
+  // Re-verificar suscripción cada 5 minutos (mantiene ultimo_acceso actualizado en el SaaS)
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(verificar, 30 * 60 * 1000)
+    const interval = setInterval(verificar, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [user?.id])
 
