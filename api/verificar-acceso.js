@@ -87,8 +87,18 @@ export default async function handler(req, res) {
   }
 
   if (acceso?.tiene_acceso) {
+    const updatePayload = { ultimo_acceso: new Date().toISOString() }
+    if (req.query.login === 'true') {
+      const { data: subRow } = await central
+        .from('suscripciones_apps')
+        .select('cant_sesiones')
+        .eq('app_id', APP_ID)
+        .eq('org_id', acceso.ret_org_id)
+        .maybeSingle()
+      updatePayload.cant_sesiones = (subRow?.cant_sesiones ?? 0) + 1
+    }
     central.from('suscripciones_apps')
-      .update({ ultimo_acceso: new Date().toISOString() })
+      .update(updatePayload)
       .eq('app_id', APP_ID)
       .eq('org_id', acceso.ret_org_id)
       .then(() => {})

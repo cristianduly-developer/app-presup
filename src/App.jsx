@@ -69,6 +69,14 @@ export default function App() {
 
   useEffect(() => { verificar() }, [verificar])
 
+  // Contar sesión real al hacer login (SIGNED_IN)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') verificarSuscripcion({ esLogin: true }).catch(() => {})
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   // Re-verificar suscripción cada 5 minutos (mantiene ultimo_acceso actualizado en el SaaS)
   useEffect(() => {
     if (!user) return
