@@ -67,6 +67,12 @@ export default function Login() {
       <p className="text-gray-600 text-[11px] text-center mt-6 px-4">
         Al ingresar aceptás los términos de uso. Tus datos están protegidos y son solo tuyos.
       </p>
+
+      <a href="https://wa.me/5492235767784" target="_blank" rel="noreferrer"
+        className="flex items-center justify-center gap-2 mt-5 text-[13px] font-medium"
+        style={{ color: '#22C55E' }}>
+        <span>💬</span> Contactar soporte
+      </a>
     </div>
   )
 }
