@@ -39,6 +39,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/^\/ayuda/],
+        cacheId: 'presup-v2',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/nqyxfumjtvbwaekxslxo\.supabase\.co\/.*/i,

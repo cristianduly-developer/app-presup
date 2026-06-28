@@ -95,6 +95,17 @@ export default function Mas({ plan }) {
           <ChevronRight size={16} className="text-gray-600" />
         </button>
 
+        {/* ayuda */}
+        <button onClick={() => { window.location.href = 'https://app-presup.vercel.app/ayuda' }}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70"
+          style={{ borderBottom: '1px solid #1E1E2E' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#3B82F622' }}>
+            <span className="text-lg">📖</span>
+          </div>
+          <span className="flex-1 text-white text-[14px] text-left">Centro de ayuda</span>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
+
         {/* contactar soporte */}
         <a href={`https://wa.me/${WA_SOPORTE}?text=${waMsg}`}
           target="_blank" rel="noreferrer"

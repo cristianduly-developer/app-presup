@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Centro de Ayuda — App Presup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #0D0D14;
+    --surface:  #161622;
+    --border:   #1E1E2E;
+    --accent:   #3B82F6;
+    --accent2:  #2563EB;
+    --green:    #22C55E;
+    --orange:   #F97316;
+    --purple:   #A855F7;
+    --text:     #F1F1F5;
+    --muted:    #6B7280;
+    --sidebar-w: 260px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  /* HEADER */
+  .header { position: sticky; top: 0; z-index: 100; background: rgba(13,13,20,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header-logo { display: flex; align-items: center; gap: 10px; }
+  .header-icon { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .header-badge { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .header-btn { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .header-btn:hover { background: var(--accent2); }
+
+  /* LAYOUT */
+  .layout { display: flex; max-width: 1200px; margin: 0 auto; }
+
+  /* SIDEBAR */
+  .sidebar { width: var(--sidebar-w); flex-shrink: 0; position: sticky; top: 61px; height: calc(100vh - 61px); overflow-y: auto; padding: 24px 16px; display: none; }
+  @media (min-width: 900px) { .sidebar { display: block; } }
+  .sidebar-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding: 0 8px; }
+  .sidebar a { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; transition: all .15s; }
+  .sidebar a:hover { color: var(--text); background: var(--surface); }
+  .sidebar a.active { color: var(--accent); background: rgba(59,130,246,.1); font-weight: 600; }
+
+  /* CONTENT */
+  .content { flex: 1; min-width: 0; padding: 32px 24px 80px; }
+  @media (max-width: 600px) { .content { padding: 20px 16px 120px; } }
+
+  /* HERO */
+  .hero { text-align: center; padding: 40px 0 32px; }
+  .hero h1 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+  @media (max-width: 600px) { .hero h1 { font-size: 24px; } }
+  .hero p { color: var(--muted); font-size: 16px; max-width: 520px; margin: 0 auto; }
+
+  /* SECTIONS */
+  .section { margin-bottom: 48px; scroll-margin-top: 80px; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .section-header h2 { font-size: 20px; font-weight: 700; }
+  .section-emoji { font-size: 22px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 12px; }
+  .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step-num { width: 28px; height: 28px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; align-items: center; justify-content: center; }
+  .step-text { font-size: 13px; color: var(--muted); padding-top: 4px; line-height: 1.6; }
+  .step-text strong { color: var(--text); }
+
+  /* TIPS */
+  .tip, .warn, .success { display: flex; gap: 10px; padding: 14px 16px; border-radius: 12px; font-size: 13px; margin: 12px 0; align-items: flex-start; }
+  .tip { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25); color: #93C5FD; }
+  .warn { background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.25); color: #FCA57D; }
+  .success { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25); color: #86EFAC; }
+  .tip-icon, .warn-icon, .success-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: middle; }
+  td:first-child { color: var(--text); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .check { color: var(--green); font-weight: 700; }
+  .cross { color: var(--muted); }
+
+  /* PILLS */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(59,130,246,.12); color: var(--accent); border: 1px solid rgba(59,130,246,.25); }
+  .pill.green { background: rgba(34,197,94,.1); color: var(--green); border-color: rgba(34,197,94,.25); }
+  .pill.orange { background: rgba(249,115,22,.1); color: var(--orange); border-color: rgba(249,115,22,.25); }
+  .pill.purple { background: rgba(168,85,247,.1); color: var(--purple); border-color: rgba(168,85,247,.25); }
+
+  /* FAQ */
+  details { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+  summary { padding: 14px 16px; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-size: 18px; color: var(--accent); transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details[open] summary { border-bottom: 1px solid var(--border); }
+  .faq-body { padding: 14px 16px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  /* MOBILE PILLS NAV */
+  .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 99; background: rgba(13,13,20,.95); border-top: 1px solid var(--border); padding: 10px 12px; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mobile-nav::-webkit-scrollbar { display: none; }
+  .mobile-nav a { flex-shrink: 0; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: none; background: var(--surface); border: 1px solid var(--border); white-space: nowrap; }
+  .mobile-nav a.active { color: var(--accent); border-color: var(--accent); background: rgba(59,130,246,.1); }
+  @media (min-width: 900px) { .mobile-nav { display: none; } }
+
+  /* GRID 2 col */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <div class="header-icon">📋</div>
+    <div>
+      <div class="header-title">App Presup</div>
+      <div class="header-badge">Centro de ayuda</div>
+    </div>
+  </div>
+  <a class="header-btn" href="https://app-presup.vercel.app">Abrir app →</a>
+</header>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <a href="#inicio">🏠 Inicio</a>
+  <a href="#presupuestos">📋 Presupuestos</a>
+  <a href="#obras">🏗 Obras</a>
+  <a href="#clientes">👥 Clientes</a>
+  <a href="#cobros">💳 Cobros</a>
+  <a href="#agenda">📅 Agenda</a>
+  <a href="#registro">🧾 Registro</a>
+  <a href="#wa">💬 WhatsApp</a>
+  <a href="#pdf">📄 PDF</a>
+  <a href="#config">⚙️ Config</a>
+  <a href="#planes">⭐ Planes</a>
+  <a href="#faq">❓ FAQ</a>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR DESKTOP -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Secciones</div>
+    <a href="#inicio">🏠 Inicio</a>
+    <a href="#presupuestos">📋 Presupuestos</a>
+    <a href="#obras">🏗 Obras</a>
+    <a href="#clientes">👥 Clientes</a>
+    <a href="#cobros">💳 Cobros y pagos</a>
+    <a href="#agenda">📅 Agenda</a>
+    <a href="#registro">🧾 Registro rápido</a>
+    <a href="#wa">💬 WhatsApp</a>
+    <a href="#pdf">📄 PDFs</a>
+    <a href="#estadisticas">📊 Estadísticas</a>
+    <a href="#config">⚙️ Configuración</a>
+    <a href="#planes">⭐ Planes</a>
+    <a href="#faq">❓ FAQ</a>
+    <a href="#contacto">📞 Contacto</a>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1>📋 Centro de Ayuda</h1>
+      <p>Todo lo que necesitás saber para sacarle el máximo provecho a App Presup desde el primer día.</p>
+    </div>
+
+    <div class="tip">
+      <span class="tip-icon">💡</span>
+      <span>Tenés <strong>28 días gratis</strong> con todas las funciones del plan Profesional. Usá este tiempo para cargar tus presupuestos reales y ver cómo funciona todo.</span>
+    </div>
+
+    <!-- INICIO -->
+    <section class="section" id="inicio">
+      <div class="section-header">
+        <span class="section-emoji">🏠</span>
+        <h2>Panel de inicio</h2>
+      </div>
+      <div class="card">
+        <h3>Las 4 métricas principales</h3>
+        <p>Al entrar a la app ves 4 indicadores clave del mes actual:</p>
+        <div class="grid2" style="margin-top:12px">
+          <div class="card" style="margin-bottom:0"><h3 style="color:#3B82F6">💰 Facturado</h3><p>Total de presupuestos aprobados en el mes.</p></div>
+          <div class="card" style="margin-bottom:0"><h3 style="color:#22C55E">✅ Cobrado</h3><p>Pagos efectivamente recibidos en el mes.</p></div>
+          <div class="card" style="margin-bottom:0"><h3 style="color:#F97316">⏳ Pendiente</h3><p>Monto total por cobrar de presupuestos activos.</p></div>
+          <div class="card" style="margin-bottom:0"><h3 style="color:#A855F7">📈 Ganancia neta</h3><p>Cobrado menos gastos registrados.</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Accesos rápidos</h3>
+        <p>Los 5 botones del centro te llevan directo a las acciones más comunes: nuevo presupuesto, clientes, agenda, gastos rápidos y registro de horas.</p>
+      </div>
+      <div class="card">
+        <h3>Agenda de hoy y embudo de obras</h3>
+        <p>El panel también muestra tus visitas programadas para hoy y el estado de tus obras activas (Enviado → Aprobado → En ejecución → Cobrado).</p>
+      </div>
+    </section>
+
+    <!-- PRESUPUESTOS -->
+    <section class="section" id="presupuestos">
+      <div class="section-header">
+        <span class="section-emoji">📋</span>
+        <h2>Presupuestos</h2>
+      </div>
+      <div class="card">
+        <h3>Cómo crear un presupuesto</h3>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Tocá el <strong>botón +</strong> o "Nuevo Presupuesto" desde el panel de inicio.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Elegí o creá un <strong>cliente</strong> y completá el título del trabajo.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Agregá <strong>ítems</strong>: materiales y mano de obra con precio unitario y cantidad.</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Configurá la <strong>vigencia</strong> (días que tiene el cliente para aceptar).</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Guardá como <strong>Borrador</strong> para seguir editando, o <strong>Enviado</strong> para mandárselo al cliente.</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Estados del presupuesto</h3>
+        <div class="pills" style="margin-top:4px">
+          <span class="pill">📝 Borrador</span>
+          <span class="pill orange">📤 Enviado</span>
+          <span class="pill green">✅ Aprobado</span>
+          <span class="pill" style="color:#EF4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08)">❌ Rechazado</span>
+          <span class="pill" style="color:#EF4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08)">⏰ Vencido</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Link público para el cliente</h3>
+        <p>Cada presupuesto tiene un <strong>link único</strong> que podés compartir por WhatsApp. El cliente lo abre en el navegador, ve el detalle completo y puede <strong>aceptar o rechazar</strong> con un toque. Opcionalmente puede firmar digitalmente.</p>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">⚡</span>
+        <span>Los presupuestos con estado <strong>Enviado</strong> que vencen en los próximos 3 días aparecen con alerta naranja en el inicio.</span>
+      </div>
+      <div class="card">
+        <h3>Duplicar un presupuesto</h3>
+        <p>Desde la lista de presupuestos, cada tarjeta tiene un botón <strong>"Duplicar"</strong>. Crea una copia en estado Borrador con todos los ítems incluidos — útil para trabajos similares.</p>
+      </div>
+    </section>
+
+    <!-- OBRAS -->
+    <section class="section" id="obras">
+      <div class="section-header">
+        <span class="section-emoji">🏗</span>
+        <h2>Obras y proyectos</h2>
+      </div>
+      <div class="card">
+        <h3>¿Qué es una obra?</h3>
+        <p>Una obra es un proyecto en ejecución. Puede estar vinculada a un presupuesto aprobado o crearse de forma independiente. Dentro de cada obra podés registrar gastos, horas trabajadas y el avance general.</p>
+      </div>
+      <div class="card">
+        <h3>Tablero Kanban</h3>
+        <p>Las obras se organizan en columnas según su estado:</p>
+        <div class="pills" style="margin-top:8px">
+          <span class="pill">📤 Enviado</span>
+          <span class="pill green">✅ Aprobado</span>
+          <span class="pill orange">⚙️ En ejecución</span>
+          <span class="pill purple">💰 Pend. cobro</span>
+          <span class="pill" style="color:#22C55E;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.08)">🏁 Cobrado</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Dentro de una obra podés registrar</h3>
+        <div class="grid2" style="margin-top:8px">
+          <div style="font-size:13px;color:var(--muted)">🧾 <strong style="color:var(--text)">Gastos</strong> — materiales, viáticos, subcontratados</div>
+          <div style="font-size:13px;color:var(--muted)">⏱ <strong style="color:var(--text)">Horas</strong> — por trabajador o tarea</div>
+          <div style="font-size:13px;color:var(--muted)">💳 <strong style="color:var(--text)">Pagos</strong> — parciales o totales</div>
+          <div style="font-size:13px;color:var(--muted)">📊 <strong style="color:var(--text)">Avance</strong> — % de completitud</div>
+        </div>
+      </div>
+      <div class="warn">
+        <span class="warn-icon">⚠️</span>
+        <span>El plan <strong>Básico</strong> tiene límite de obras activas simultáneas. Finalizá las obras terminadas para liberar espacio.</span>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="section" id="clientes">
+      <div class="section-header">
+        <span class="section-emoji">👥</span>
+        <h2>Clientes</h2>
+      </div>
+      <div class="card">
+        <h3>Crear un cliente</h3>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Entrá a <strong>Clientes</strong> desde el menú.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Tocá el <strong>+</strong> y completá nombre, teléfono y dirección.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">También podés crear un cliente <strong>directamente desde el presupuesto</strong> nuevo.</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Historial del cliente</h3>
+        <p>Al tocar un cliente ves todos sus presupuestos y obras. Desde ahí podés llamarlo o enviarle un WhatsApp con un toque.</p>
+      </div>
+    </section>
+
+    <!-- COBROS -->
+    <section class="section" id="cobros">
+      <div class="section-header">
+        <span class="section-emoji">💳</span>
+        <h2>Cobros y pagos</h2>
+      </div>
+      <div class="card">
+        <h3>Registrar un pago</h3>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Abrí el presupuesto u obra.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Tocá <strong>"Registrar pago"</strong>.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Ingresá el monto y el método (efectivo, transferencia, etc.).</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Métodos de pago disponibles</h3>
+        <div class="pills" style="margin-top:8px">
+          <span class="pill">💵 Efectivo</span>
+          <span class="pill">🏦 Transferencia</span>
+          <span class="pill">💳 Débito</span>
+          <span class="pill">💳 Crédito</span>
+          <span class="pill">📱 Mercado Pago</span>
+          <span class="pill">🔵 Otro</span>
+        </div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        <span>Podés registrar <strong>pagos parciales</strong>. La barra de progreso en cada presupuesto muestra el % cobrado automáticamente.</span>
+      </div>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="section" id="agenda">
+      <div class="section-header">
+        <span class="section-emoji">📅</span>
+        <h2>Agenda</h2>
+      </div>
+      <div class="card">
+        <h3>¿Para qué sirve la agenda?</h3>
+        <p>Para programar visitas, reuniones con clientes y recordatorios de seguimiento. Las visitas de hoy aparecen en el panel de inicio con el estado de cada una.</p>
+      </div>
+      <div class="card">
+        <h3>Estados de visita</h3>
+        <div class="pills" style="margin-top:8px">
+          <span class="pill orange">⏳ Pendiente</span>
+          <span class="pill green">✅ Confirmada</span>
+          <span class="pill" style="color:#EF4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08)">❌ Cancelada</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- REGISTRO RÁPIDO -->
+    <section class="section" id="registro">
+      <div class="section-header">
+        <span class="section-emoji">🧾</span>
+        <h2>Registro rápido</h2>
+      </div>
+      <div class="card">
+        <h3>Gastos y horas en segundos</h3>
+        <p>Desde cualquier pantalla podés tocar el botón central <strong>+</strong> para acceder al registro rápido. Elegís si es un <strong>gasto</strong> (material, viático, herramienta) o <strong>horas</strong> trabajadas, y lo asociás a una obra.</p>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">⏱</span>
+        <span>Registrá los gastos en el momento, no al final del día — es mucho más fácil no olvidarse.</span>
+      </div>
+    </section>
+
+    <!-- WHATSAPP -->
+    <section class="section" id="wa">
+      <div class="section-header">
+        <span class="section-emoji">💬</span>
+        <h2>WhatsApp</h2>
+      </div>
+      <div class="card">
+        <h3>¿Cómo funciona?</h3>
+        <p>La app <strong>no tiene API de WhatsApp</strong> — abre directamente WhatsApp con el texto ya preparado, lo mandás vos con un toque. No necesita configuración ni número adicional.</p>
+      </div>
+      <div class="card">
+        <h3>Mensaje por defecto</h3>
+        <p>Podés personalizar el mensaje en <strong>Configuración → WhatsApp</strong>. Usa variables dinámicas que se reemplazan automáticamente:</p>
+        <div class="pills" style="margin-top:10px">
+          <span class="pill">{cliente}</span>
+          <span class="pill">{numero}</span>
+          <span class="pill">{total}</span>
+          <span class="pill">{link}</span>
+        </div>
+        <div class="tip" style="margin-top:12px">
+          <span class="tip-icon">✏️</span>
+          <span>Ejemplo: <em>"Hola {cliente}, te mando el presupuesto #{numero} por {total}. Podés verlo acá: {link}"</em></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PDF -->
+    <section class="section" id="pdf">
+      <div class="section-header">
+        <span class="section-emoji">📄</span>
+        <h2>PDFs</h2>
+      </div>
+      <div class="card">
+        <h3>Exportar un presupuesto a PDF</h3>
+        <div class="steps" style="margin-top:10px">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Abrí el presupuesto.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Tocá <strong>"Ver PDF"</strong>.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Desde el PDF podés descargarlo o compartirlo directamente.</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>¿Qué incluye el PDF?</h3>
+        <p>Tus datos de empresa, logo (si configuraste), datos del cliente, detalle de ítems con precios, total, condiciones y firma digital si el cliente firmó.</p>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        <span>Completá tu perfil en <strong>Configuración</strong> (CUIT, banco, condición IVA) para que aparezca en el PDF automáticamente.</span>
+      </div>
+    </section>
+
+    <!-- ESTADÍSTICAS -->
+    <section class="section" id="estadisticas">
+      <div class="section-header">
+        <span class="section-emoji">📊</span>
+        <h2>Estadísticas</h2>
+      </div>
+      <div class="card">
+        <h3>¿Qué podés ver?</h3>
+        <p>Evolución mensual de facturación y cobros, tasa de aprobación de presupuestos, obras más rentables, gastos por categoría y comparativas entre períodos.</p>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="section" id="config">
+      <div class="section-header">
+        <span class="section-emoji">⚙️</span>
+        <h2>Configuración</h2>
+      </div>
+      <div class="grid2">
+        <div class="card" style="margin-bottom:0">
+          <h3>📋 Datos personales</h3>
+          <p>Nombre o empresa, oficio, teléfono, ciudad. Aparecen en todos tus presupuestos.</p>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3>🏦 Datos fiscales y bancarios</h3>
+          <p>CUIT, condición IVA, CBU/alias. Se muestran en los PDFs y recibos.</p>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3>📅 Presupuestos</h3>
+          <p>Vigencia por defecto (días que tiene el cliente para aceptar).</p>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3>💰 Recargos</h3>
+          <p>Urgencia, nocturno y feriado — porcentajes para aplicar rápido a cualquier presupuesto.</p>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3>💬 WhatsApp</h3>
+          <p>Mensaje personalizado con variables dinámicas.</p>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3>🚪 Cerrar sesión</h3>
+          <p>Tu cuenta queda guardada. Los datos no se pierden.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLANES -->
+    <section class="section" id="planes">
+      <div class="section-header">
+        <span class="section-emoji">⭐</span>
+        <h2>Planes</h2>
+      </div>
+      <div class="success">
+        <span class="success-icon">🎯</span>
+        <span>Durante el <strong>período de prueba (28 días)</strong> tenés todas las funciones del plan Profesional sin restricciones y sin tarjeta de crédito.</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Función</th>
+              <th>Básico</th>
+              <th>Profesional</th>
+              <th>Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Presupuestos por mes</td><td>10</td><td>Ilimitados</td><td>Ilimitados</td></tr>
+            <tr><td>Obras activas</td><td>3</td><td>Ilimitadas</td><td>Ilimitadas</td></tr>
+            <tr><td>Clientes</td><td>500</td><td>Ilimitados</td><td>Ilimitados</td></tr>
+            <tr><td>PDF de presupuestos</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+            <tr><td>Link público + firma digital</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+            <tr><td>Estadísticas avanzadas</td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+            <tr><td>Reportes exportables</td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+            <tr><td>Plantillas de ítems</td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="section-header">
+        <span class="section-emoji">❓</span>
+        <h2>Preguntas frecuentes</h2>
+      </div>
+
+      <details>
+        <summary>¿Funciona sin internet?</summary>
+        <div class="faq-body">Parcialmente. La app es una PWA instalable y puede mostrar datos ya cargados sin conexión, pero para guardar presupuestos nuevos o ver datos actualizados necesitás internet.</div>
+      </details>
+      <details>
+        <summary>¿Cómo instalo la app en mi celular?</summary>
+        <div class="faq-body">En Chrome (Android): tocá los tres puntos → "Agregar a pantalla de inicio". En Safari (iPhone): tocá el botón compartir → "Agregar a inicio". La app funciona como una app nativa.</div>
+      </details>
+      <details>
+        <summary>¿Mis datos están seguros?</summary>
+        <div class="faq-body">Sí. Los datos se guardan en Supabase con Row Level Security — cada usuario solo puede ver sus propios datos. La conexión es siempre por HTTPS.</div>
+      </details>
+      <details>
+        <summary>¿Qué pasa cuando vence el demo?</summary>
+        <div class="faq-body">Tus datos no se pierden. La app queda en modo restringido hasta que activés un plan. Podés contactarnos por WhatsApp para activar tu suscripción.</div>
+      </details>
+      <details>
+        <summary>¿Puedo usar la app desde la computadora?</summary>
+        <div class="faq-body">Sí. App Presup tiene modo desktop con un menú lateral. Podés acceder desde cualquier navegador en <strong>app-presup.vercel.app</strong>.</div>
+      </details>
+      <details>
+        <summary>¿Cuántos usuarios pueden usar la misma cuenta?</summary>
+        <div class="faq-body">Por ahora cada cuenta es individual (un solo usuario). La función de colaboradores/equipo está en desarrollo.</div>
+      </details>
+      <details>
+        <summary>¿Puedo importar mis presupuestos de Excel?</summary>
+        <div class="faq-body">Actualmente no hay importación directa desde Excel. Podés usar las plantillas de ítems para agilizar la carga de presupuestos similares.</div>
+      </details>
+      <details>
+        <summary>¿El cliente necesita la app para ver el presupuesto?</summary>
+        <div class="faq-body">No. El cliente recibe un link que abre directo en el navegador. No necesita descargar nada ni crear cuenta.</div>
+      </details>
+      <details>
+        <summary>¿Puedo cambiar de plan?</summary>
+        <div class="faq-body">Sí. Contactanos por WhatsApp y lo gestionamos manualmente. El cambio de plan no afecta los datos existentes.</div>
+      </details>
+      <details>
+        <summary>¿Cómo cancelo?</summary>
+        <div class="faq-body">Escribinos por WhatsApp o email. No hay permanencia mínima.</div>
+      </details>
+    </section>
+
+    <!-- CONTACTO -->
+    <section class="section" id="contacto">
+      <div class="section-header">
+        <span class="section-emoji">📞</span>
+        <h2>Contacto y soporte</h2>
+      </div>
+      <div class="grid2">
+        <a href="https://wa.me/5492235767784" target="_blank" style="text-decoration:none">
+          <div class="card" style="cursor:pointer;border-color:rgba(34,197,94,.3)">
+            <h3>💬 WhatsApp</h3>
+            <p>La forma más rápida. Respondemos en minutos en horario laboral.</p>
+          </div>
+        </a>
+        <a href="mailto:cristian@solucionesmdp.com.ar" style="text-decoration:none">
+          <div class="card" style="cursor:pointer">
+            <h3>📧 Email</h3>
+            <p>cristian@solucionesmdp.com.ar — para consultas que necesiten más detalle.</p>
+          </div>
+        </a>
+      </div>
+      <div class="tip" style="margin-top:4px">
+        <span class="tip-icon">🌐</span>
+        <span>También podés visitar <strong>solucionesmdp.com.ar</strong> para ver todas las apps disponibles.</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // Sidebar activo al hacer scroll
+  const links = document.querySelectorAll('.sidebar a, .mobile-nav a')
+  const sections = document.querySelectorAll('.section')
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id
+        links.forEach(l => {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + id)
+        })
+      }
+    })
+  }, { rootMargin: '-20% 0px -70% 0px' })
+  sections.forEach(s => obs.observe(s))
+</script>
+</body>
+</html>

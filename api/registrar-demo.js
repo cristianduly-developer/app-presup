@@ -122,6 +122,10 @@ export default async function handler(req, res) {
           <div style="text-align:center;">
             <a href="${appUrl}" style="display:inline-block;background:#0891b2;color:white;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;">Abrir App Presupuestos →</a>
           </div>
+          <div style="margin-top:20px;padding:16px;background:#f0f9ff;border-radius:10px;text-align:center;">
+            <p style="margin:0 0 10px;font-size:14px;color:#374151;">¿No sabés por dónde empezar?</p>
+            <a href="${appUrl}/ayuda" style="display:inline-block;background:#fff;color:#0891b2;padding:10px 24px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;border:1px solid #bae6fd;">Ver guía de ayuda 📖</a>
+          </div>
         </div>
         <div style="border-top:1px solid #f1f5f9;padding:20px 24px;text-align:center;">
           <p style="margin:0;color:#9ca3af;font-size:12px;">Soluciones MDP · <a href="https://wa.me/5492235767784" style="color:#9ca3af;">Escribinos por WhatsApp</a></p>
