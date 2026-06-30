@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { usePresupuestoPublico } from '../lib/usePresupuestos'
 import CircleProgress from '../components/ui/CircleProgress'
-
+import { supabase } from '../lib/supabase'
 import { fmt } from '../lib/fmt'
 
 export default function LinkPublico() {
@@ -73,7 +73,22 @@ export default function LinkPublico() {
     setErrAceptar('')
     const canvas = canvasRef.current
     const firmaBase64 = canvas.toDataURL('image/png')
-    const result = await aceptar({ firma_imagen: firmaBase64, firma_nombre: nombreFirma })
+
+    // intentar subir firma a Storage para obtener URL pública (usable en emails)
+    let firmaUrl = null
+    try {
+      const blob = await (await fetch(firmaBase64)).blob()
+      const path = `firmas/${p.id}_${Date.now()}.png`
+      const { data: up } = await supabase.storage.from('firmas').upload(path, blob, { contentType: 'image/png', upsert: true })
+      if (up?.path) {
+        const { data: pub } = supabase.storage.from('firmas').getPublicUrl(up.path)
+        firmaUrl = pub?.publicUrl || null
+      }
+    } catch (_) {}
+
+    const firmaParaGuardar = firmaUrl || firmaBase64
+
+    const result = await aceptar({ firma_imagen: firmaParaGuardar, firma_nombre: nombreFirma })
     if (result?.ok) {
       setAceptado(true)
       // mails de confirmación — fire & forget
@@ -90,7 +105,7 @@ export default function LinkPublico() {
             vigencia_dias:    p.vigencia_dias,
             senia_activa:     p.senia_activa,
             senia_porcentaje: p.senia_porcentaje,
-            firma_imagen:     firmaBase64,
+            firma_imagen:     firmaUrl,   // solo URL, no base64 (emails bloquean base64)
             firma_nombre:     nombreFirma || p.cliente_nombre,
             items:            p.items || [],
           },
@@ -190,7 +205,7 @@ export default function LinkPublico() {
   )
 
   return (
-    <div className="min-h-screen pb-32" style={{ background: '#0D0D14' }}>
+    <div className="min-h-screen pb-40" style={{ background: '#0D0D14' }}>
 
       {/* header profesional */}
       <div className="px-5 pt-10 pb-6">
@@ -334,32 +349,33 @@ export default function LinkPublico() {
           </div>
         </div>
 
+        {/* cartel de seña (siempre visible si aplica) */}
+        {p.status === 'enviado' && !vencido && p.senia_activa && p.senia_porcentaje > 0 && (
+          <div className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.25)' }}>
+            <span className="text-2xl">💰</span>
+            <div>
+              <p className="text-yellow-400 font-bold text-[13px]">Seña para confirmar el trabajo</p>
+              <p className="text-white font-bold text-[18px] leading-tight">
+                {fmt(Math.round(p.total * p.senia_porcentaje / 100))}
+                <span className="text-gray-500 font-normal text-[12px] ml-2">({p.senia_porcentaje}%)</span>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* botón aceptar / panel firma */}
         {p.status === 'enviado' && !vencido && (
           <>
-            {/* cartel de seña */}
-            {p.senia_activa && p.senia_porcentaje > 0 && (
-              <div className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.25)' }}>
-                <span className="text-2xl">💰</span>
-                <div>
-                  <p className="text-yellow-400 font-bold text-[13px]">Seña para confirmar el trabajo</p>
-                  <p className="text-white font-bold text-[18px] leading-tight">
-                    {fmt(Math.round(p.total * p.senia_porcentaje / 100))}
-                    <span className="text-gray-500 font-normal text-[12px] ml-2">({p.senia_porcentaje}%)</span>
-                  </p>
-                </div>
-              </div>
-            )}
-
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
 
-            <button onClick={() => { setNombreFirma(p.cliente_nombre || p.clientes?.nombre || ''); setShowFirma(true) }}
-              className="w-full py-5 rounded-2xl text-white font-bold text-[17px]"
-              style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.3)' }}>
-              ✅ ACEPTAR PRESUPUESTO
+            {/* botón rechazar inline */}
+            <button onClick={() => setShowConfirmRechazar(true)}
+              className="w-full py-3 rounded-2xl font-semibold text-[14px]"
+              style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444' }}>
+              ✕ No aceptar este presupuesto
             </button>
 
-            {/* bottom sheet firma */}
+            {/* bottom sheet firma (se abre al tocar el botón fijo de abajo) */}
             {showFirma && (
               <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: 'rgba(0,0,0,.6)' }}
                 onClick={() => { setShowFirma(false); limpiarFirma() }}>
@@ -436,13 +452,6 @@ export default function LinkPublico() {
               </div>
             )}
 
-            {/* botón rechazar */}
-            <button onClick={() => setShowConfirmRechazar(true)}
-              className="w-full py-3 rounded-2xl font-semibold text-[14px]"
-              style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444' }}>
-              ✕ No aceptar este presupuesto
-            </button>
-
             {/* modal confirmación rechazo */}
             {showConfirmRechazar && (
               <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: 'rgba(0,0,0,.7)' }}
@@ -474,6 +483,22 @@ export default function LinkPublico() {
           </>
         )}
 
+      </div>
+
+      {/* ─── BOTÓN FIJO AL FONDO ─── */}
+      {p.status === 'enviado' && !vencido && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-3"
+          style={{ background: 'linear-gradient(to top, #0D0D14 70%, transparent)' }}>
+          <button onClick={() => { setNombreFirma(p.cliente_nombre || ''); setShowFirma(true) }}
+            className="w-full py-5 rounded-2xl text-white font-bold text-[17px] max-w-md mx-auto block"
+            style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.4)' }}>
+            ✅ ACEPTAR PRESUPUESTO
+          </button>
+        </div>
+      )}
+
+      {/* contenido aprobado (reemplaza la sección de abajo cuando está aprobado) */}
+      <div className="px-4 max-w-md mx-auto">
         {p.status === 'aprobado' && (
           <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(34,197,94,.1)', border: '1px solid rgba(34,197,94,.3)' }}>
             <p className="text-green-400 font-bold text-[15px]">✅ Presupuesto aceptado</p>
