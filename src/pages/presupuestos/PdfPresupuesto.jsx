@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-
 import { fmt, fmtFecha } from '../../lib/fmt'
+
+const AZUL  = '#1D4ED8'
+const AZUL2 = '#EFF6FF'
+const GRIS  = '#6B7280'
+const NEGRO = '#111827'
 
 export default function PdfPresupuesto() {
   const { id } = useParams()
-  const [p, setP] = useState(null)
+  const [p, setP]         = useState(null)
   const [perfil, setPerfil] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -35,241 +39,240 @@ export default function PdfPresupuesto() {
   }, [loading, p])
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
-      Preparando PDF...
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'sans-serif', background: '#f3f4f6' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+        <div style={{ color: GRIS, fontWeight: 600 }}>Preparando PDF...</div>
+      </div>
     </div>
   )
   if (!p) return <div style={{ padding: 40, fontFamily: 'sans-serif' }}>Presupuesto no encontrado</div>
 
-  const items = (p.presupuesto_items || []).sort((a, b) => a.orden - b.orden)
+  const items   = (p.presupuesto_items || []).sort((a, b) => a.orden - b.orden)
   const totalMat = items.filter(i => i.tipo === 'material').reduce((s, i) => s + (i.subtotal || i.cantidad * i.precio_unit || 0), 0)
   const totalMO  = items.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + (i.subtotal || i.cantidad * i.precio_unit || 0), 0)
 
-  const s = {
-    page:    { fontFamily: 'Arial, sans-serif', fontSize: 13, color: '#1a1a1a', maxWidth: 800, margin: '0 auto', padding: '40px 40px 60px' },
-    header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, paddingBottom: 24, borderBottom: '2px solid #1a1a1a' },
-    logo:    { width: 70, height: 70, objectFit: 'contain', borderRadius: 12 },
-    logoPlaceholder: { width: 70, height: 70, background: '#3B82F6', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#fff' },
-    profNombre: { fontSize: 20, fontWeight: 700, marginBottom: 4 },
-    profInfo:   { fontSize: 11, color: '#555', lineHeight: 1.7 },
-    presupTitulo: { textAlign: 'right' },
-    presupNum:  { fontSize: 28, fontWeight: 700, color: '#1a1a1a' },
-    presupSub:  { fontSize: 11, color: '#888', marginTop: 4 },
-    badge:      { display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, marginTop: 8 },
-    section:    { marginBottom: 24 },
-    sectionTitle: { fontSize: 10, fontWeight: 700, color: '#888', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, paddingBottom: 4, borderBottom: '1px solid #e5e5e5' },
-    clienteCard: { background: '#f8f8f8', borderRadius: 10, padding: '14px 18px' },
-    table:      { width: '100%', borderCollapse: 'collapse' },
-    th:         { textAlign: 'left', fontSize: 10, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', padding: '8px 10px', borderBottom: '1px solid #e5e5e5' },
-    thRight:    { textAlign: 'right', fontSize: 10, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', padding: '8px 10px', borderBottom: '1px solid #e5e5e5' },
-    td:         { padding: '10px 10px', borderBottom: '1px solid #f0f0f0', fontSize: 13, verticalAlign: 'top' },
-    tdRight:    { padding: '10px 10px', borderBottom: '1px solid #f0f0f0', fontSize: 13, textAlign: 'right', fontWeight: 500 },
-    tdSub:      { fontSize: 10, color: '#999', marginTop: 2 },
-    totalesBox: { marginTop: 16, display: 'flex', justifyContent: 'flex-end' },
-    totalesInner: { minWidth: 240 },
-    totRow:     { display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 13, color: '#555' },
-    totRowFinal:{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', marginTop: 6, borderTop: '2px solid #1a1a1a', fontSize: 17, fontWeight: 700, color: '#1a1a1a' },
-    footer:     { marginTop: 40, paddingTop: 20, borderTop: '1px solid #e5e5e5' },
-    validez:    { background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 18px', fontSize: 12, color: '#1e40af', marginBottom: 16 },
-    footerText: { fontSize: 10, color: '#aaa', textAlign: 'center', marginTop: 12 },
-  }
+  const STATUS_COLOR = { borrador: '#6B7280', enviado: AZUL, aprobado: '#16A34A', rechazado: '#DC2626', vencido: '#DC2626' }
+  const STATUS_LABEL = { borrador: 'Borrador', enviado: 'Enviado', aprobado: 'Aprobado', rechazado: 'Rechazado', vencido: 'Vencido' }
+  const statusColor  = STATUS_COLOR[p.status] || '#6B7280'
+  const statusLabel  = STATUS_LABEL[p.status] || p.status
 
-  const STATUS_COLOR = { borrador: '#6B7280', enviado: '#3B82F6', aprobado: '#22C55E', vencido: '#EF4444' }
-  const STATUS_LABEL = { borrador: 'Borrador', enviado: 'Enviado', aprobado: 'Aprobado', vencido: 'Vencido' }
+  const profUbicacion = [perfil?.ciudad, perfil?.provincia].filter(Boolean).join(', ')
 
   return (
     <>
       <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .print-page { background: white; }
         @media print {
-          body { margin: 0; }
-          @page { margin: 20mm; size: A4; }
-          button.no-print { display: none !important; }
+          body { background: white; }
+          .no-print { display: none !important; }
+          @page { margin: 0; size: A4; }
+          .print-page { box-shadow: none; }
         }
-        body { background: #f5f5f5; }
-        .print-page { background: white; box-shadow: 0 2px 20px rgba(0,0,0,.1); }
       `}</style>
 
-      {/* botón imprimir — solo visible en pantalla */}
-      <div style={{ background: '#1a1a1a', padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }} className="no-print">
-        <button onClick={() => window.print()}
-          style={{ background: '#3B82F6', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-          🖨 Imprimir / Guardar PDF
-        </button>
-        <button onClick={() => window.close()}
-          style={{ background: '#333', color: '#aaa', border: 'none', borderRadius: 10, padding: '10px 18px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-          Cerrar
-        </button>
+      {/* barra superior — solo pantalla */}
+      <div className="no-print" style={{ background: NEGRO, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ color: '#9CA3AF', fontSize: 13 }}>Presupuesto #{p.numero} · {perfil?.nombre}</span>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => window.print()}
+            style={{ background: AZUL, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            🖨 Imprimir / Guardar PDF
+          </button>
+          <button onClick={() => window.close()}
+            style={{ background: '#374151', color: '#D1D5DB', border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+            Cerrar
+          </button>
+        </div>
       </div>
 
-      <div className="print-page" style={s.page}>
+      <div className="print-page" style={{ maxWidth: 800, margin: '0 auto', minHeight: '100vh' }}>
 
-        {/* HEADER */}
-        <div style={s.header}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-            {perfil?.logo_url
-              ? <img src={perfil.logo_url} alt="Logo" style={s.logo} />
-              : <div style={s.logoPlaceholder}>🔧</div>
-            }
-            <div>
-              <div style={s.profNombre}>{perfil?.nombre || 'Profesional'}</div>
-              <div style={s.profInfo}>
-                {perfil?.oficio && <div>{perfil.oficio.charAt(0).toUpperCase() + perfil.oficio.slice(1)}</div>}
-                {perfil?.matricula && <div>Matrícula: {perfil.matricula}</div>}
-                {perfil?.cuit && <div>CUIT: {perfil.cuit}</div>}
-                {perfil?.condicion_iva && <div>{perfil.condicion_iva.charAt(0).toUpperCase() + perfil.condicion_iva.slice(1)}</div>}
-                {perfil?.telefono && <div>Tel: {perfil.telefono}</div>}
-                {perfil?.ciudad && <div>{perfil.ciudad}{perfil.provincia ? `, ${perfil.provincia}` : ''}</div>}
-              </div>
-            </div>
-          </div>
-          <div style={s.presupTitulo}>
-            <div style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase' }}>Presupuesto</div>
-            <div style={s.presupNum}>#{p.numero}</div>
-            {p.titulo && <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', marginTop: 4 }}>{p.titulo}</div>}
-            <div style={s.presupSub}>Fecha: {fmtFecha(p.created_at)}</div>
-            <div style={{ ...s.badge, background: (STATUS_COLOR[p.status] || '#6B7280') + '20', color: STATUS_COLOR[p.status] || '#6B7280' }}>
-              {STATUS_LABEL[p.status] || p.status}
-            </div>
-          </div>
-        </div>
+        {/* franja de color superior */}
+        <div style={{ background: AZUL, height: 6 }} />
 
-        {/* CLIENTE */}
-        {p.clientes && (
-          <div style={s.section}>
-            <div style={s.sectionTitle}>Cliente</div>
-            <div style={s.clienteCard}>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{p.clientes.nombre}</div>
-              <div style={{ fontSize: 12, color: '#555', lineHeight: 1.8 }}>
-                {p.clientes.telefono && <span>Tel: {p.clientes.telefono} &nbsp;</span>}
-                {p.clientes.email && <span>Email: {p.clientes.email} &nbsp;</span>}
-                {p.clientes.direccion && <span>Dir: {p.clientes.direccion} &nbsp;</span>}
-                {p.clientes.cuit && <span>CUIT: {p.clientes.cuit}</span>}
-              </div>
-            </div>
-          </div>
-        )}
+        <div style={{ padding: '36px 48px 48px' }}>
 
-        {/* ITEMS */}
-        <div style={s.section}>
-          <div style={s.sectionTitle}>Detalle del presupuesto</div>
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={s.th}>Descripción</th>
-                <th style={{ ...s.th, textAlign: 'center', width: 60 }}>Cant.</th>
-                <th style={{ ...s.thRight, width: 100 }}>P. Unit.</th>
-                <th style={{ ...s.thRight, width: 110 }}>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => item.tipo === 'seccion' ? (
-                <tr key={i}>
-                  <td colSpan={4} style={{ ...s.td, background: '#F5F3FF', paddingTop: 12, paddingBottom: 6, borderBottom: '1px solid #DDD6FE' }}>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#7C3AED' }}>📌 {item.descripcion}</div>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                  <td style={s.td}>
-                    <div>{item.descripcion}</div>
-                    <div style={s.tdSub}>{item.tipo === 'material' ? '🔧 Material' : '👷 Mano de obra'} · {item.unidad}</div>
-                  </td>
-                  <td style={{ ...s.td, textAlign: 'center' }}>{item.cantidad}</td>
-                  <td style={s.tdRight}>{fmt(item.precio_unit)}</td>
-                  <td style={s.tdRight}>{fmt(item.subtotal || item.cantidad * item.precio_unit)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* HEADER */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 36, paddingBottom: 28, borderBottom: `1px solid #E5E7EB` }}>
 
-          {/* totales */}
-          <div style={s.totalesBox}>
-            <div style={s.totalesInner}>
-              {totalMat > 0 && (
-                <div style={s.totRow}>
-                  <span>Subtotal materiales</span>
-                  <span>{fmt(totalMat)}</span>
-                </div>
-              )}
-              {totalMO > 0 && (
-                <div style={s.totRow}>
-                  <span>Subtotal mano de obra</span>
-                  <span>{fmt(totalMO)}</span>
-                </div>
-              )}
-              <div style={s.totRowFinal}>
-                <span>TOTAL</span>
-                <span>{fmt(p.total)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* NOTAS */}
-        {p.notas_internas && (
-          <div style={{ ...s.section, marginBottom: 32 }}>
-            <div style={s.sectionTitle}>Observaciones</div>
-            <div style={{ fontSize: 12, color: '#444', lineHeight: 1.7, background: '#fffbeb', borderRadius: 8, padding: '10px 14px', border: '1px solid #fde68a' }}>
-              {p.notas_internas}
-            </div>
-          </div>
-        )}
-
-        {/* FIRMA */}
-        {p.firma_imagen && (
-          <div style={{ ...s.section, marginBottom: 32 }}>
-            <div style={s.sectionTitle}>Firma del cliente</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 40 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 8, background: '#fafafa', display: 'inline-block' }}>
-                  <img src={p.firma_imagen} alt="Firma" style={{ height: 80, maxWidth: 280, display: 'block' }} />
-                </div>
-                <div style={{ marginTop: 6, borderTop: '1px solid #ccc', paddingTop: 4 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{p.firma_nombre || p.clientes?.nombre || 'Cliente'}</div>
-                  {p.firma_fecha && (
-                    <div style={{ fontSize: 10, color: '#888' }}>
-                      Firmado digitalmente el {new Date(p.firma_fecha).toLocaleString('es-AR')}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div style={{ flex: 1, textAlign: 'right' }}>
-                <div style={{ borderTop: '1px solid #ccc', paddingTop: 4, display: 'inline-block', minWidth: 200 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{perfil?.nombre || ''}</div>
-                  <div style={{ fontSize: 10, color: '#888' }}>Profesional</div>
+            {/* logo + datos profesional */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+              {perfil?.logo_url
+                ? <img src={perfil.logo_url} alt="Logo" style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 14, border: '1px solid #E5E7EB' }} />
+                : <div style={{ width: 72, height: 72, background: AZUL, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, color: '#fff', flexShrink: 0 }}>
+                    {perfil?.nombre?.charAt(0)?.toUpperCase() || '🔧'}
+                  </div>
+              }
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: NEGRO, marginBottom: 3 }}>{perfil?.nombre || 'Profesional'}</div>
+                {perfil?.oficio && <div style={{ fontSize: 12, color: GRIS, marginBottom: 6 }}>{perfil.oficio.charAt(0).toUpperCase() + perfil.oficio.slice(1)}</div>}
+                <div style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.8 }}>
+                  {profUbicacion && <div>📍 {profUbicacion}</div>}
+                  {perfil?.telefono && <div>📞 {perfil.telefono}</div>}
+                  {perfil?.cuit && <div>CUIT: {perfil.cuit}</div>}
+                  {perfil?.condicion_iva && <div>{perfil.condicion_iva.charAt(0).toUpperCase() + perfil.condicion_iva.slice(1)}</div>}
+                  {perfil?.matricula && <div>Mat. {perfil.matricula}</div>}
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* FOOTER */}
-        <div style={s.footer}>
-          <div style={s.validez}>
-            📅 <strong>Presupuesto válido por {p.vigencia_dias} días</strong>
-            {p.fecha_vence && ` · Vence el ${fmtFecha(p.fecha_vence)}`}
+            {/* número + estado */}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>Presupuesto</div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: AZUL, lineHeight: 1, marginBottom: 4 }}>#{p.numero}</div>
+              {p.titulo && <div style={{ fontSize: 14, fontWeight: 700, color: NEGRO, marginBottom: 6 }}>{p.titulo}</div>}
+              <div style={{ fontSize: 11, color: GRIS, marginBottom: 8 }}>Fecha: {fmtFecha(p.created_at)}</div>
+              <div style={{ display: 'inline-block', padding: '4px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: statusColor + '18', color: statusColor }}>
+                {statusLabel}
+              </div>
+            </div>
           </div>
 
-          {/* datos de pago */}
-          {(perfil?.cbu || perfil?.alias_banco) && (
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: 12, color: '#14532D' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>💳 Datos para transferencia</div>
-              {perfil.banco && <div>Banco: <strong>{perfil.banco}</strong></div>}
-              {perfil.cbu && <div>CBU: <strong>{perfil.cbu}</strong></div>}
-              {perfil.alias_banco && <div>Alias: <strong>{perfil.alias_banco}</strong></div>}
-              <div style={{ marginTop: 4, color: '#166534' }}>A nombre de: <strong>{perfil.nombre}</strong>{perfil.cuit ? ` · CUIT: ${perfil.cuit}` : ''}</div>
+          {/* CLIENTE */}
+          {p.clientes && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Cliente</div>
+              <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '14px 20px', border: '1px solid #F3F4F6' }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: NEGRO, marginBottom: 4 }}>{p.clientes.nombre}</div>
+                <div style={{ fontSize: 12, color: GRIS, display: 'flex', flexWrap: 'wrap', gap: '4px 20px' }}>
+                  {p.clientes.telefono && <span>📞 {p.clientes.telefono}</span>}
+                  {p.clientes.email && <span>✉ {p.clientes.email}</span>}
+                  {p.clientes.direccion && <span>📍 {p.clientes.direccion}</span>}
+                  {p.clientes.cuit && <span>CUIT: {p.clientes.cuit}</span>}
+                </div>
+              </div>
             </div>
           )}
 
-          {perfil?.telefono && (
-            <div style={{ fontSize: 12, color: '#555', marginBottom: 8 }}>
-              Consultas: {perfil.nombre} · {perfil.telefono}
+          {/* ITEMS */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Detalle del presupuesto</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${AZUL}` }}>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 10, fontWeight: 700, color: AZUL, letterSpacing: 1, textTransform: 'uppercase' }}>Descripción</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', fontSize: 10, fontWeight: 700, color: AZUL, letterSpacing: 1, textTransform: 'uppercase', width: 60 }}>Cant.</th>
+                  <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 10, fontWeight: 700, color: AZUL, letterSpacing: 1, textTransform: 'uppercase', width: 110 }}>P. Unit.</th>
+                  <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 10, fontWeight: 700, color: AZUL, letterSpacing: 1, textTransform: 'uppercase', width: 110 }}>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => item.tipo === 'seccion' ? (
+                  <tr key={i}>
+                    <td colSpan={4} style={{ padding: '12px 10px 6px', background: AZUL2, borderLeft: `3px solid ${AZUL}` }}>
+                      <div style={{ fontWeight: 800, fontSize: 11, color: AZUL, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                        {item.descripcion || 'Etapa'}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', background: i % 2 === 0 ? '#fff' : '#FAFAFA' }}>
+                    <td style={{ padding: '11px 10px', verticalAlign: 'top' }}>
+                      <div style={{ fontWeight: 600, color: NEGRO }}>
+                        {item.descripcion || (item.tipo === 'mano_obra' ? 'Mano de obra' : 'Material')}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
+                        {item.tipo === 'material' ? '🔧 Material' : '👷 Mano de obra'}{item.unidad && item.unidad !== 'global' ? ` · ${item.unidad}` : ''}
+                      </div>
+                    </td>
+                    <td style={{ padding: '11px 10px', textAlign: 'center', color: GRIS }}>{item.cantidad}</td>
+                    <td style={{ padding: '11px 10px', textAlign: 'right', color: GRIS }}>{fmt(item.precio_unit)}</td>
+                    <td style={{ padding: '11px 10px', textAlign: 'right', fontWeight: 700, color: NEGRO }}>{fmt(item.subtotal || item.cantidad * item.precio_unit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* totales */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+              <div style={{ minWidth: 260 }}>
+                {totalMat > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, color: GRIS }}>
+                    <span>Subtotal materiales</span><span>{fmt(totalMat)}</span>
+                  </div>
+                )}
+                {totalMO > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, color: GRIS }}>
+                    <span>Subtotal mano de obra</span><span>{fmt(totalMO)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', marginTop: 8, background: AZUL, borderRadius: 10 }}>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: '#fff', letterSpacing: 0.5 }}>TOTAL</span>
+                  <span style={{ fontWeight: 900, fontSize: 20, color: '#fff' }}>{fmt(p.total)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* NOTAS */}
+          {p.notas_internas && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Observaciones</div>
+              <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.8, background: '#FFFBEB', borderRadius: 10, padding: '12px 16px', border: '1px solid #FDE68A' }}>
+                {p.notas_internas}
+              </div>
             </div>
           )}
-          <div style={s.footerText}>
-            Presupuesto #{p.numero} · {perfil?.nombre} · Generado el {fmtFecha(new Date().toISOString())}
+
+          {/* FIRMA */}
+          {p.firma_imagen && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Firma del cliente</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 40 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: 8, background: '#F9FAFB', display: 'inline-block' }}>
+                    <img src={p.firma_imagen} alt="Firma" style={{ height: 80, maxWidth: 260, display: 'block' }} />
+                  </div>
+                  <div style={{ marginTop: 6, borderTop: '1px solid #D1D5DB', paddingTop: 4 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: NEGRO }}>{p.firma_nombre || p.clientes?.nombre || 'Cliente'}</div>
+                    {p.firma_fecha && <div style={{ fontSize: 10, color: GRIS }}>Firmado el {new Date(p.firma_fecha).toLocaleString('es-AR')}</div>}
+                  </div>
+                </div>
+                <div style={{ flex: 1, textAlign: 'right' }}>
+                  <div style={{ borderTop: '1px solid #D1D5DB', paddingTop: 4, display: 'inline-block', minWidth: 200 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: NEGRO }}>{perfil?.nombre}</div>
+                    <div style={{ fontSize: 10, color: GRIS }}>Profesional</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FOOTER */}
+          <div style={{ marginTop: 36, paddingTop: 24, borderTop: '1px solid #E5E7EB' }}>
+
+            <div style={{ background: AZUL2, border: `1px solid #BFDBFE`, borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 16 }}>📅</span>
+              <span><strong>Presupuesto válido por {p.vigencia_dias} días</strong>{p.fecha_vence ? ` · Vence el ${fmtFecha(p.fecha_vence)}` : ''}</span>
+            </div>
+
+            {(perfil?.cbu || perfil?.alias_banco) && (
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 18px', marginBottom: 16, fontSize: 12, color: '#14532D' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>💳 Datos para transferencia</div>
+                {perfil.banco && <div>Banco: <strong>{perfil.banco}</strong></div>}
+                {perfil.cbu && <div>CBU: <strong>{perfil.cbu}</strong></div>}
+                {perfil.alias_banco && <div>Alias: <strong>{perfil.alias_banco}</strong></div>}
+                <div style={{ marginTop: 4 }}>A nombre de: <strong>{perfil.nombre}</strong>{perfil.cuit ? ` · CUIT: ${perfil.cuit}` : ''}</div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+              <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                {perfil?.telefono && `Consultas: ${perfil.nombre} · ${perfil.telefono}`}
+              </div>
+              <div style={{ fontSize: 10, color: '#D1D5DB' }}>
+                Presupuesto #{p.numero} · Generado el {fmtFecha(new Date().toISOString())}
+              </div>
+            </div>
           </div>
+
         </div>
+
+        {/* franja inferior */}
+        <div style={{ background: AZUL, height: 4 }} />
       </div>
     </>
   )

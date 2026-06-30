@@ -35,9 +35,11 @@ begin
 
   v_limite := case v_plan
     when 'basico'      then 50
-    when 'demo'        then 999
     when 'profesional' then 200
     when 'premium'     then 999999
+    when 'trial'       then 200
+    when 'demo'        then 200
+    when 'sincargo'    then 200
     else 50
   end;
 
