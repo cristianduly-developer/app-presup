@@ -96,7 +96,19 @@ export default function LinkPublico() {
   const cobrado = p.cobrado || 0
   const pct = p.total > 0 ? Math.round((cobrado / p.total) * 100) : 0
   const vencido = p.fecha_vence && new Date(p.fecha_vence + 'T23:59:59') < new Date()
-  const prof = { nombre: p.prof_nombre, oficio: p.prof_oficio, logo_url: p.prof_logo, telefono: p.prof_telefono }
+  const prof = {
+    nombre:       p.prof_nombre,
+    oficio:       p.prof_oficio,
+    logo_url:     p.prof_logo,
+    telefono:     p.prof_telefono,
+    ciudad:       p.prof_ciudad,
+    provincia:    p.prof_provincia,
+    matricula:    p.prof_matricula,
+    cuit:         p.prof_cuit,
+    condicion_iva: p.prof_condicion_iva,
+  }
+  const profInicial = prof.nombre?.charAt(0)?.toUpperCase() || '?'
+  const profUbicacion = [prof.ciudad, prof.provincia].filter(Boolean).join(', ')
 
   async function confirmarRechazar() {
     setRechazando(true)
@@ -146,14 +158,61 @@ export default function LinkPublico() {
     <div className="min-h-screen pb-8" style={{ background: '#0D0D14' }}>
 
       {/* header profesional */}
-      <div className="px-5 pt-10 pb-6 text-center">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3"
-          style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
-          🔧
+      <div className="px-5 pt-10 pb-6">
+        <div className="flex items-center gap-4">
+          {/* avatar / logo */}
+          {prof.logo_url ? (
+            <img src={prof.logo_url} alt={prof.nombre}
+              className="w-16 h-16 rounded-2xl object-cover shrink-0"
+              style={{ border: '1px solid #2A2A3A' }} />
+          ) : (
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shrink-0"
+              style={{ background: '#3B82F6' }}>
+              {profInicial}
+            </div>
+          )}
+          {/* datos */}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-[18px] leading-tight">{prof.nombre || 'Profesional'}</p>
+            {prof.oficio && <p className="text-blue-400 text-[13px] font-medium mt-0.5">{prof.oficio}</p>}
+            {profUbicacion && <p className="text-gray-500 text-[12px] mt-0.5">📍 {profUbicacion}</p>}
+            {prof.telefono && (
+              <a href={`https://wa.me/54${prof.telefono.replace(/\D/g,'')}`}
+                target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 mt-1.5 text-[12px] font-medium px-2.5 py-1 rounded-lg"
+                style={{ background: 'rgba(37,211,102,.12)', color: '#25D366' }}>
+                <span>💬</span> {prof.telefono}
+              </a>
+            )}
+          </div>
         </div>
-        <p className="text-white font-bold text-[18px]">{prof?.nombre || 'Profesional'}</p>
-        <p className="text-gray-400 text-[13px]">{prof?.oficio || ''}</p>
+        {/* datos fiscales si tiene */}
+        {(prof.matricula || prof.cuit) && (
+          <div className="flex gap-4 mt-4 px-1">
+            {prof.matricula && (
+              <div>
+                <p className="text-gray-600 text-[10px]">Matrícula</p>
+                <p className="text-gray-400 text-[12px] font-medium">{prof.matricula}</p>
+              </div>
+            )}
+            {prof.cuit && (
+              <div>
+                <p className="text-gray-600 text-[10px]">CUIT</p>
+                <p className="text-gray-400 text-[12px] font-medium">{prof.cuit}</p>
+              </div>
+            )}
+            {prof.condicion_iva && (
+              <div>
+                <p className="text-gray-600 text-[10px]">IVA</p>
+                <p className="text-gray-400 text-[12px] font-medium capitalize">{prof.condicion_iva.replace('_', ' ')}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* divider */}
+      <div className="mx-4 mb-4 h-px" style={{ background: '#1E1E2E' }} />
 
       <div className="px-4 flex flex-col gap-4 max-w-md mx-auto">
 
