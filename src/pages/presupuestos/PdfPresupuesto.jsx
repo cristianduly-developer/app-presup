@@ -131,28 +131,33 @@ export default function PdfPresupuesto() {
             </div>
           </div>
 
-          {/* ─── CLIENTE + TRABAJO en una sola fila ─── */}
-          <div style={{ display:'flex', gap:12, marginBottom:14 }}>
-            {p.clientes && (
-              <div style={{ flex:1, background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:8, padding:'8px 14px' }}>
-                <div style={{ fontSize:8, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:3 }}>Cliente</div>
-                <div style={{ fontWeight:800, fontSize:13, color:NEGRO }}>{p.clientes.nombre}</div>
-                <div style={{ fontSize:10, color:GRIS, marginTop:1 }}>
-                  {[p.clientes.telefono, p.clientes.email, p.clientes.direccion].filter(Boolean).join(' · ')}
-                </div>
+          {/* ─── CLIENTE ─── */}
+          {p.clientes && (
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8, padding:'7px 12px', background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:8 }}>
+              <div style={{ width:28, height:28, background:VERDE, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:'#fff', fontWeight:800, flexShrink:0 }}>
+                {inicialCli}
               </div>
-            )}
-            {p.titulo && (
-              <div style={{ flex:1, background:'#fff', border:`1px solid ${LINEA}`, borderLeft:`4px solid ${VERDE}`, borderRadius:6, padding:'8px 14px' }}>
-                <div style={{ fontSize:8, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:3 }}>Trabajo</div>
-                <div style={{ fontSize:14, fontWeight:800, color:NEGRO }}>{p.titulo}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <span style={{ fontWeight:800, fontSize:13, color:NEGRO }}>{p.clientes.nombre}</span>
+                {(p.clientes.telefono || p.clientes.email || p.clientes.direccion) && (
+                  <span style={{ fontSize:10, color:GRIS, marginLeft:8 }}>
+                    {[p.clientes.telefono, p.clientes.email, p.clientes.direccion].filter(Boolean).join(' · ')}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* ─── TÍTULO ─── */}
+          {p.titulo && (
+            <div style={{ marginBottom:10, padding:'6px 12px', borderLeft:`4px solid ${VERDE}`, background:'#fff' }}>
+              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:1 }}>Trabajo</div>
+              <div style={{ fontSize:14, fontWeight:800, color:NEGRO }}>{p.titulo}</div>
+            </div>
+          )}
 
           {/* ─── TABLA ITEMS ─── */}
           <div style={{ marginBottom:16 }}>
-            <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:6 }}>Detalle</div>
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
                 <tr style={{ background:VERDE }}>
@@ -177,7 +182,7 @@ export default function PdfPresupuesto() {
                       <div style={{ fontWeight:600, color:NEGRO, fontSize:12 }}>
                         {item.descripcion || (item.tipo === 'mano_obra' ? 'Mano de obra' : 'Material')}
                       </div>
-                      {item.unidad && item.unidad !== 'global' && (
+                      {item.unidad && item.unidad !== 'global' && item.unidad !== 'u' && item.unidad !== 'un' && (
                         <div style={{ fontSize:9, color:'#9CA3AF', marginTop:1 }}>{item.unidad}</div>
                       )}
                     </td>
