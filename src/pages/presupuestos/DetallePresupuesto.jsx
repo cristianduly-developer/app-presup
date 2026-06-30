@@ -199,46 +199,10 @@ export default function DetallePresupuesto() {
           </div>
         </div>
 
-        {/* costos */}
-        <div className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
-          <p className="text-gray-500 text-[10px] font-semibold tracking-wider mb-3">COSTOS</p>
-          <div className="flex flex-col gap-2">
-            {totalMat > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-500 text-[13px]">Materiales</span>
-                <span className="text-[13px] font-medium" style={{ color: '#3B82F6' }}>{fmt(totalMat)}</span>
-              </div>
-            )}
-            {totalMO > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-500 text-[13px]">Mano de obra</span>
-                <span className="text-[13px] font-medium" style={{ color: '#F97316' }}>{fmt(totalMO)}</span>
-              </div>
-            )}
-            <div className="h-px my-1" style={{ background: '#1E1E2E' }} />
-            <div className="flex justify-between items-center">
-              <span className="text-white font-bold text-[14px]">Total</span>
-              <span className="text-white font-bold text-[20px]">{fmt(p.total)}</span>
-            </div>
-            {cobrado > 0 && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-[13px]">Cobrado</span>
-                  <span className="text-[13px] font-medium" style={{ color: '#22C55E' }}>{fmt(cobrado)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-[13px]">Pendiente</span>
-                  <span className="text-[13px] font-medium" style={{ color: '#EF4444' }}>{fmt(pendiente)}</span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* items */}
+        {/* items + total */}
         {items.length > 0 && (
           <div className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
-            <p className="text-gray-500 text-[10px] font-semibold tracking-wider mb-3">ÍTEMS ({items.length})</p>
+            <p className="text-gray-500 text-[10px] font-semibold tracking-wider mb-3">DETALLE</p>
             <div className="flex flex-col gap-3">
               {items.map((item, i) => (
                 item.tipo === 'seccion' ? (
@@ -259,6 +223,26 @@ export default function DetallePresupuesto() {
                   </div>
                 )
               ))}
+            </div>
+
+            {/* total al pie del card */}
+            <div className="mt-3 pt-3 flex flex-col gap-1.5" style={{ borderTop: '1px solid #1E1E2E' }}>
+              {totalMat > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500 text-[12px]">Materiales</span>
+                  <span className="text-[12px] font-medium" style={{ color: '#3B82F6' }}>{fmt(totalMat)}</span>
+                </div>
+              )}
+              {totalMO > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500 text-[12px]">Mano de obra</span>
+                  <span className="text-[12px] font-medium" style={{ color: '#F97316' }}>{fmt(totalMO)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-white font-bold text-[15px]">Total</span>
+                <span className="text-white font-bold text-[22px]">{fmt(p.total)}</span>
+              </div>
             </div>
           </div>
         )}
