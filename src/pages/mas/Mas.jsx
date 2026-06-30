@@ -44,23 +44,23 @@ export default function Mas({ plan }) {
       </div>
 
       {/* tiles */}
-      <div className="grid grid-cols-3 gap-3 px-4 mb-6">
+      <div className="grid grid-cols-4 gap-2 px-4 mb-4">
         {TILES.map(t => (
           <button key={t.label}
             onClick={() => t.to && navigate(t.to)}
-            className="rounded-2xl p-4 flex flex-col items-center gap-2 active:opacity-70 relative"
+            className="rounded-2xl p-3 flex flex-col items-center gap-1.5 active:opacity-70 relative"
             style={{ background: '#161622', border: '1px solid #1E1E2E', opacity: t.to ? 1 : 0.55 }}>
             {t.badge && (
-              <span className="absolute top-2 right-2 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+              <span className="absolute top-1.5 right-1.5 text-white text-[7px] font-bold px-1 py-0.5 rounded-full"
                 style={{ background: '#3B82F6' }}>
                 {t.badge}
               </span>
             )}
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{ background: t.color + '33' }}>
-              <t.icon size={22} style={{ color: t.color }} />
+              <t.icon size={18} style={{ color: t.color }} />
             </div>
-            <span className="text-white text-[12px] font-medium text-center leading-tight">{t.label}</span>
+            <span className="text-white text-[11px] font-medium text-center leading-tight">{t.label}</span>
           </button>
         ))}
       </div>
