@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { Phone, ChevronRight, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Phone, ChevronRight, AlertTriangle, X } from 'lucide-react'
 import CircleProgress from '../components/ui/CircleProgress'
 import { KpiSkeleton } from '../components/ui/Skeleton'
 import { useKpis } from '../lib/useKpis'
@@ -34,6 +35,15 @@ export default function Inicio() {
   const navigate = useNavigate()
   const { perfil, user } = useAuth()
   const { kpis, agenda, embudo, obrasEjecucion, porVencer, novedades, loading } = useKpis()
+  const [descartadas, setDescartadas] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('novedades_descartadas') || '[]') } catch { return [] }
+  })
+  const descartarNovedad = (id) => {
+    const next = [...descartadas, id]
+    setDescartadas(next)
+    localStorage.setItem('novedades_descartadas', JSON.stringify(next))
+  }
+  const novedadesVisibles = novedades.filter(p => !descartadas.includes(p.id))
 
   const nombreRaw = perfil?.nombre || user?.user_metadata?.full_name || user?.user_metadata?.name || ''
   const nombre = nombreRaw.split(' ')[0] || 'vos'
@@ -59,28 +69,35 @@ export default function Inicio() {
       </div>
 
       {/* novedades: aprobados / rechazados en las últimas 24hs */}
-      {novedades.length > 0 && (
+      {novedadesVisibles.length > 0 && (
         <div className="mx-4 mb-4 flex flex-col gap-2">
-          {novedades.map(p => {
+          {novedadesVisibles.map(p => {
             const aprobado = p.status === 'aprobado'
             return (
-              <button key={p.id} onClick={() => navigate(`/presupuestos/${p.id}`)}
-                className="w-full text-left rounded-2xl p-4 flex items-center gap-3"
+              <div key={p.id} className="w-full rounded-2xl flex items-center gap-3 pr-2"
                 style={{
                   background: aprobado ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)',
                   border: `1px solid ${aprobado ? 'rgba(34,197,94,.25)' : 'rgba(239,68,68,.25)'}`,
                 }}>
-                <span className="text-xl shrink-0">{aprobado ? '✅' : '❌'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[13px]" style={{ color: aprobado ? '#22C55E' : '#EF4444' }}>
-                    {aprobado ? 'Presupuesto aceptado' : 'Presupuesto rechazado'}
-                  </p>
-                  <p className="text-white text-[12px] truncate">
-                    {p.clientes?.nombre || 'Cliente'} · {p.titulo || `#${p.numero}`}
-                  </p>
-                </div>
-                <ChevronRight size={15} className="text-gray-600 shrink-0" />
-              </button>
+                <button className="flex-1 text-left p-4 flex items-center gap-3"
+                  onClick={() => navigate(`/presupuestos/${p.id}`)}>
+                  <span className="text-xl shrink-0">{aprobado ? '✅' : '❌'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[13px]" style={{ color: aprobado ? '#22C55E' : '#EF4444' }}>
+                      {aprobado ? 'Presupuesto aceptado' : 'Presupuesto rechazado'}
+                    </p>
+                    <p className="text-white text-[12px] truncate">
+                      {p.clientes?.nombre || 'Cliente'} · {p.titulo || `#${p.numero}`}
+                    </p>
+                  </div>
+                  <ChevronRight size={15} className="text-gray-600 shrink-0" />
+                </button>
+                <button onClick={() => descartarNovedad(p.id)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(255,255,255,.06)' }}>
+                  <X size={14} className="text-gray-500" />
+                </button>
+              </div>
             )
           })}
         </div>
