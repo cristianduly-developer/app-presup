@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, MessageCircle, Download, Pencil, Trash2, Copy, BookmarkPlus, Play, X } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Download, Pencil, Trash2, BookmarkPlus, Play, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { usePlan, tieneFeature } from '../../lib/PlanContext'
 import { fmt } from '../../lib/fmt'
@@ -75,27 +75,6 @@ export default function DetallePresupuesto() {
     const trabajo = p.titulo ? ` — ${p.titulo}` : ''
     const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero}${trabajo} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
     window.open(`https://wa.me/${tel}?text=${msg}`)
-  }
-
-  async function duplicar() {
-    const { data: { user } } = await supabase.auth.getUser()
-    const items = (p.presupuesto_items || []).map(({ descripcion, tipo, cantidad, precio_unit, unidad, orden }) =>
-      ({ descripcion, tipo, cantidad, precio_unit, unidad, orden })
-    )
-    const { data: nuevo, error } = await supabase.rpc('crear_presupuesto', {
-      p_user_id:          user.id,
-      p_cliente_id:       p.cliente_id,
-      p_vigencia_dias:    p.vigencia_dias,
-      p_notas_internas:   p.notas_internas || '',
-      p_status:           'borrador',
-      p_total:            p.total,
-      p_total_materiales: p.total_materiales,
-      p_total_mano_obra:  p.total_mano_obra,
-      p_margen_estimado:  p.margen_estimado,
-      p_fecha_vence:      null,
-      p_items:            items,
-    })
-    if (!error && nuevo) navigate(`/presupuestos/${nuevo.id}`)
   }
 
   async function guardarPlantilla() {
@@ -334,16 +313,10 @@ export default function DetallePresupuesto() {
                 <Pencil size={15} /> Editar
               </button>
 
-              <button onClick={duplicar}
-                className="py-3 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2"
-                style={{ background: 'rgba(107,114,128,.1)', color: '#9CA3AF' }}>
-                <Copy size={15} /> Duplicar
-              </button>
-
               <button onClick={guardarPlantilla} disabled={guardandoPlantilla}
-                className="py-3 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60 col-span-2"
+                className="py-3 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{ background: 'rgba(251,191,36,.1)', color: '#FBB724' }}>
-                <BookmarkPlus size={15} /> {guardandoPlantilla ? 'Guardando...' : 'Guardar como plantilla'}
+                <BookmarkPlus size={15} /> {guardandoPlantilla ? 'Guardando...' : 'Guardar plantilla'}
               </button>
             </div>
 

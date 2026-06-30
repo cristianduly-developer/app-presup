@@ -43,8 +43,8 @@ export default function NuevoPresupuesto() {
   // cargar plantillas disponibles (solo si el plan las incluye)
   useEffect(() => {
     if (!tieneFeature(plan, 'plantillas')) return
-    supabase.from('plantillas').select('*, plantilla_items(*)')
-      .order('usos', { ascending: false })
+    supabase.from('plantillas').select('*')
+      .order('created_at', { ascending: false })
       .then(({ data }) => setPlantillasDisp(data || []))
   }, [plan])
 
@@ -66,21 +66,16 @@ export default function NuevoPresupuesto() {
     setPlantillaAplicada(pl.nombre)
     setSugerencias([])
     if (pl.nombre && !titulo) setTitulo(pl.nombre)
-    if (pl.plantilla_items?.length) {
-      setItems(pl.plantilla_items.map(it => {
-        const esMO = it.tipo === 'mano_obra'
-        const cant = it.cantidad || 1
-        const precio = it.precio || 0
-        return {
-          tipo:        it.tipo || 'material',
-          descripcion: it.descripcion || '',
-          unidad:      esMO ? 'global' : (it.unidad || 'u'),
-          cantidad:    esMO ? 1 : cant,
-          precio_unit: esMO ? cant * precio : precio,
-        }
-      }))
+    const itms = pl.items || []
+    if (itms.length) {
+      setItems(itms.map(it => ({
+        tipo:        it.tipo || 'mano_obra',
+        descripcion: it.descripcion || '',
+        unidad:      it.unidad || (it.tipo === 'mano_obra' ? 'global' : 'u'),
+        cantidad:    it.cantidad || 1,
+        precio_unit: it.precio_unit || 0,
+      })))
     }
-    supabase.from('plantillas').update({ usos: (pl.usos || 0) + 1 }).eq('id', pl.id)
   }
 
   // cargar presupuesto existente para editar y saltar al paso 2
@@ -121,22 +116,16 @@ export default function NuevoPresupuesto() {
         .single()
       if (!data) return
       setPlantillaNombre(data.nombre)
-      if (data.plantilla_items?.length) {
-        setItems(data.plantilla_items.map(it => {
-          const esMO = it.tipo === 'mano_obra'
-          const cant = it.cantidad || 1
-          const precio = it.precio || 0
-          return {
-            tipo:        it.tipo || 'material',
-            descripcion: it.descripcion || '',
-            unidad:      esMO ? 'global' : (it.unidad || 'u'),
-            cantidad:    esMO ? 1 : cant,
-            precio_unit: esMO ? cant * precio : precio,
-          }
-        }))
+      const itms = data.items || []
+      if (itms.length) {
+        setItems(itms.map(it => ({
+          tipo:        it.tipo || 'mano_obra',
+          descripcion: it.descripcion || '',
+          unidad:      it.unidad || (it.tipo === 'mano_obra' ? 'global' : 'u'),
+          cantidad:    it.cantidad || 1,
+          precio_unit: it.precio_unit || 0,
+        })))
       }
-      // incrementar usos
-      await supabase.from('plantillas').update({ usos: data.usos + 1 }).eq('id', plantillaId)
     }
     cargarPlantilla()
   }, [plantillaId])
@@ -282,10 +271,10 @@ export default function NuevoPresupuesto() {
               style={{ background: '#161622', border: `1px solid ${titulo ? '#3B82F6' : '#1E1E2E'}` }}
             />
 
-            {/* sugerencias de plantillas */}
+            {/* sugerencias de plantillas al escribir */}
             {sugerencias.length > 0 && (
               <div className="mt-2 flex flex-col gap-1.5">
-                <p className="text-gray-500 text-[10px] px-1">⚡ Plantillas que coinciden — tocá para cargar ítems:</p>
+                <p className="text-gray-500 text-[10px] px-1">⚡ Plantillas guardadas — tocá para cargar ítems:</p>
                 {sugerencias.map(pl => (
                   <button key={pl.id} onClick={() => aplicarPlantilla(pl)}
                     className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
@@ -293,9 +282,28 @@ export default function NuevoPresupuesto() {
                     <Zap size={14} className="text-blue-400 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-blue-300 font-semibold text-[13px]">{pl.nombre}</p>
-                      <p className="text-gray-500 text-[10px]">{pl.plantilla_items?.length || 0} ítems · usado {pl.usos || 0} veces</p>
+                      <p className="text-gray-500 text-[10px]">{(pl.items || []).length} ítems</p>
                     </div>
                     <span className="text-blue-400 text-[11px] font-semibold shrink-0">Usar →</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* botón ver todas las plantillas */}
+            {plantillasDisp.length > 0 && !plantillaAplicada && sugerencias.length === 0 && (
+              <div className="mt-2 flex flex-col gap-1.5">
+                <p className="text-gray-500 text-[10px] px-1">📋 Plantillas guardadas:</p>
+                {plantillasDisp.map(pl => (
+                  <button key={pl.id} onClick={() => aplicarPlantilla(pl)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left"
+                    style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+                    <Zap size={14} className="text-yellow-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-[13px]">{pl.nombre}</p>
+                      <p className="text-gray-500 text-[10px]">{(pl.items || []).length} ítems</p>
+                    </div>
+                    <span className="text-yellow-400 text-[11px] font-semibold shrink-0">Usar →</span>
                   </button>
                 ))}
               </div>
