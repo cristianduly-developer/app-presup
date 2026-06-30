@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/useAuth'
 import { verificarSuscripcion } from './lib/useSuscripcion'
 import { supabase } from './lib/supabase'
+import { invalidarCacheObras } from './lib/useObras'
 
 const WA_SOPORTE = '5492235767784'
 import { PlanContext } from './lib/PlanContext'
@@ -51,6 +52,7 @@ export default function App() {
             clearTimeout(notifTimer.current)
             setNotif({ mensaje: `¡Presupuesto #${payload.new.numero} aprobado por el cliente!`, id: payload.new.id })
             notifTimer.current = setTimeout(() => setNotif(null), 7000)
+            invalidarCacheObras()
           }
         })
       .subscribe()

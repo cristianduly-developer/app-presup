@@ -7,6 +7,8 @@ const TTL = 60_000
 let _cache = null
 let _cacheTs = 0
 
+export function invalidarCacheObras() { _cacheTs = 0 }
+
 export function useObras() {
   const [obras, setObras] = useState(_cache || [])
   const [loading, setLoading] = useState(!_cache)
