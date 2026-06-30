@@ -616,11 +616,13 @@ export default function NuevoPresupuesto() {
             <p className="text-gray-500 text-[11px] font-semibold tracking-wider mb-1">
               ÍTEMS ({items.filter(i => i.tipo !== 'seccion' && (i.precio_unit > 0 || i.descripcion.trim())).length})
             </p>
-            {items.filter(i => i.tipo === 'seccion' || i.precio_unit > 0 || i.descripcion.trim()).map((it, i) => it.tipo === 'seccion' ? (
+            {items.filter(i => i.tipo === 'seccion' || i.precio_unit > 0 || i.descripcion.trim()).map((it, i) => {
+              const desc = it.descripcion.trim() || (it.tipo === 'mano_obra' ? 'Mano de obra' : it.tipo === 'seccion' ? 'Etapa' : 'Material')
+              return it.tipo === 'seccion' ? (
               <div key={i} className="flex items-center gap-2 my-1">
                 <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#A855F7', background: 'rgba(168,85,247,.1)' }}>
-                  📌 {it.descripcion}
+                  📌 {desc}
                 </span>
                 <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
               </div>
@@ -628,12 +630,12 @@ export default function NuevoPresupuesto() {
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span>{it.tipo === 'material' ? '🔧' : '👷'}</span>
-                  <span className="text-white text-[13px]">{it.descripcion}</span>
+                  <span className="text-white text-[13px]">{desc}</span>
                   {it.cantidad > 1 && <span className="text-gray-600 text-[11px]">x{it.cantidad}</span>}
                 </div>
                 <span className="text-gray-400 text-[12px]">{fmt(it.cantidad * it.precio_unit)}</span>
               </div>
-            ))}
+            )})}
           </div>
 
           <div className="flex flex-col gap-3 mt-2">
