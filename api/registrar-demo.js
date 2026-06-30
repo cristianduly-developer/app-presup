@@ -98,7 +98,7 @@ export default async function handler(req, res) {
   // Bienvenida al usuario + notificación al admin
   try {
     const fechaAlta = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
-    const mailFrom = process.env.MAIL_FROM ?? 'onboarding@resend.dev'
+    const mailFrom = process.env.MAIL_FROM ?? 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
     const appUrl = 'https://presupuestos.solucionesmdp.com.ar'
 
     const bienvenidaHtml = `

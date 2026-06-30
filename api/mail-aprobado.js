@@ -1,4 +1,4 @@
-const MAIL_FROM    = 'App Presupuestos <noreply@solucionesmdp.com.ar>'
+const MAIL_FROM    = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
 const MAIL_ADMIN   = 'cristianduly@gmail.com'
 const APP_URL      = 'https://presupuestos.solucionesmdp.com.ar'
 const WA_SOPORTE   = '5492235767784'
