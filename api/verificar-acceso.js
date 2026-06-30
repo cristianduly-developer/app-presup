@@ -102,6 +102,24 @@ export default async function handler(req, res) {
       .eq('app_id', APP_ID)
       .eq('org_id', acceso.ret_org_id)
       .then(() => {})
+
+    // Sincronizar plan del SaaS central → perfiles (para que las RPCs lean el plan correcto)
+    const planCentral = acceso.plan || 'basico'
+    const estadoCentral = acceso.estado || 'activo'
+    let planDB
+    if (estadoCentral === 'demo') {
+      planDB = 'demo'
+    } else if (planCentral === 'sincargo') {
+      planDB = 'profesional'
+    } else if (['basico', 'profesional', 'premium'].includes(planCentral)) {
+      planDB = planCentral
+    } else {
+      planDB = 'basico'
+    }
+    supabaseApp.from('perfiles')
+      .update({ plan: planDB })
+      .eq('id', user.id)
+      .then(() => {})
   }
 
   res.setHeader('Cache-Control', 'private, max-age=120')
