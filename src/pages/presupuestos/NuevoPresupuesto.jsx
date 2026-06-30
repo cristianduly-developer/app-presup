@@ -170,7 +170,7 @@ export default function NuevoPresupuesto() {
         const { data } = await crearCliente(clienteNuevo)
         cId = data?.id
       }
-      const filtrados = items.filter(i => i.descripcion.trim())
+      const filtrados = items.map(i => ({ ...i, descripcion: i.descripcion.trim() || (i.tipo === 'mano_obra' ? 'Mano de obra' : i.tipo === 'seccion' ? 'Etapa' : 'Material') })).filter(i => i.precio_unit > 0 || i.tipo === 'seccion')
       const totalMat2 = filtrados.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
       const totalMO2  = filtrados.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
       // secciones no aportan al total
@@ -225,7 +225,7 @@ export default function NuevoPresupuesto() {
     }
     const { data, error } = await crear(
       { titulo, cliente_id: cId || null, vigencia_dias: vigencia, notas_internas: notas, status },
-      items.filter(i => i.descripcion.trim())
+      items.map(i => ({ ...i, descripcion: i.descripcion.trim() || (i.tipo === 'mano_obra' ? 'Mano de obra' : i.tipo === 'seccion' ? 'Etapa' : 'Material') })).filter(i => i.precio_unit > 0 || i.tipo === 'seccion')
     )
     setGuardando(false)
     if (!error && data) navigate(`/presupuestos/${data.id}`)
