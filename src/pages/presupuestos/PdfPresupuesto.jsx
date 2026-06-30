@@ -134,14 +134,38 @@ export default function PdfPresupuesto() {
           {/* CLIENTE */}
           {p.clientes && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Cliente</div>
-              <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '14px 20px', border: '1px solid #F3F4F6' }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: NEGRO, marginBottom: 4 }}>{p.clientes.nombre}</div>
-                <div style={{ fontSize: 12, color: GRIS, display: 'flex', flexWrap: 'wrap', gap: '4px 20px' }}>
-                  {p.clientes.telefono && <span>📞 {p.clientes.telefono}</span>}
-                  {p.clientes.email && <span>✉ {p.clientes.email}</span>}
-                  {p.clientes.direccion && <span>📍 {p.clientes.direccion}</span>}
-                  {p.clientes.cuit && <span>CUIT: {p.clientes.cuit}</span>}
+              <div style={{ fontSize: 10, fontWeight: 700, color: GRIS, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Presupuesto para</div>
+              <div style={{ borderRadius: 12, border: `1.5px solid ${AZUL}22`, overflow: 'hidden' }}>
+                {/* franja superior del cliente */}
+                <div style={{ background: AZUL, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                    {p.clientes.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>{p.clientes.nombre}</div>
+                    {p.clientes.cuit && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>CUIT: {p.clientes.cuit}</div>}
+                  </div>
+                </div>
+                {/* datos de contacto */}
+                <div style={{ background: '#F9FAFB', padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: '10px 32px' }}>
+                  {p.clientes.telefono && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: 6, background: AZUL + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>📞</div>
+                      <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{p.clientes.telefono}</span>
+                    </div>
+                  )}
+                  {p.clientes.email && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: 6, background: AZUL + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✉️</div>
+                      <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{p.clientes.email}</span>
+                    </div>
+                  )}
+                  {p.clientes.direccion && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: 6, background: AZUL + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>📍</div>
+                      <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{p.clientes.direccion}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
