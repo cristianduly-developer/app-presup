@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Search, X, Check } from 'lucide-react'
+import { ArrowLeft, Plus, Search, X, Check, Pencil, Trash2 } from 'lucide-react'
 import { useClientes } from '../../lib/useClientes'
 
 import { fmt, waMe } from '../../lib/fmt'
@@ -13,14 +13,41 @@ const CLASIFICACION = {
 
 export default function Clientes() {
   const navigate = useNavigate()
-  const { clientes, loading, crear, cargar } = useClientes()
+  const { clientes, loading, crear, actualizar, eliminar } = useClientes()
   const [busqueda, setBusqueda] = useState('')
   const [showNuevo, setShowNuevo] = useState(false)
   const [form, setForm] = useState({ nombre: '', telefono: '', email: '', direccion: '', clasificacion: 'normal' })
   const [guardando, setGuardando] = useState(false)
   const [errorGuardar, setErrorGuardar] = useState('')
 
+  // editar
+  const [editando, setEditando] = useState(null) // cliente objeto
+  const [formEdit, setFormEdit] = useState({})
+  const [guardandoEdit, setGuardandoEdit] = useState(false)
+
+  // eliminar
+  const [confirmEliminar, setConfirmEliminar] = useState(null) // cliente objeto
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setE = (k, v) => setFormEdit(f => ({ ...f, [k]: v }))
+
+  function abrirEditar(c) {
+    setEditando(c)
+    setFormEdit({ nombre: c.nombre || '', telefono: c.telefono || '', email: c.email || '', direccion: c.direccion || '', clasificacion: c.clasificacion || 'normal' })
+  }
+
+  async function guardarEditar() {
+    if (!formEdit.nombre.trim()) return
+    setGuardandoEdit(true)
+    await actualizar(editando.id, formEdit)
+    setGuardandoEdit(false)
+    setEditando(null)
+  }
+
+  async function confirmarEliminar() {
+    await eliminar(confirmEliminar.id)
+    setConfirmEliminar(null)
+  }
 
   async function guardar() {
     if (!form.nombre.trim()) return
@@ -91,32 +118,104 @@ export default function Clientes() {
                     {c.direccion && <p className="text-gray-500 text-[11px] truncate">📍 {c.direccion}</p>}
                   </div>
                 </div>
-                <div className="flex gap-3 mt-3 pt-3" style={{ borderTop: '1px solid #1E1E2E' }}>
-                  {c.telefono && (
-                    <a href={`tel:${c.telefono}`}
-                      className="flex-1 py-2 rounded-xl text-[11px] font-semibold text-center"
-                      style={{ background: 'rgba(59,130,246,.12)', color: '#3B82F6' }}
-                      onClick={e => e.stopPropagation()}>
-                      Llamar
-                    </a>
-                  )}
+                <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #1E1E2E' }}>
                   {c.telefono && (
                     <a href={waMe(c.telefono)} target="_blank" rel="noreferrer"
                       className="flex-1 py-2 rounded-xl text-[11px] font-semibold text-center"
-                      style={{ background: 'rgba(34,197,94,.12)', color: '#22C55E' }}
-                      onClick={e => e.stopPropagation()}>
+                      style={{ background: 'rgba(34,197,94,.12)', color: '#22C55E' }}>
                       WhatsApp
                     </a>
                   )}
                   <button onClick={() => navigate(`/clientes/${c.id}`)}
                     className="flex-1 py-2 rounded-xl text-[11px] font-semibold"
                     style={{ background: 'rgba(107,114,128,.12)', color: '#9CA3AF' }}>
-                    Ver historial
+                    Historial
+                  </button>
+                  <button onClick={() => abrirEditar(c)}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: 'rgba(59,130,246,.12)' }}>
+                    <Pencil size={14} style={{ color: '#3B82F6' }} />
+                  </button>
+                  <button onClick={() => setConfirmEliminar(c)}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: 'rgba(239,68,68,.1)' }}>
+                    <Trash2 size={14} style={{ color: '#EF4444' }} />
                   </button>
                 </div>
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* modal editar cliente */}
+      {editando && (
+        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setEditando(null)}>
+          <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6 overflow-y-auto max-h-[85vh]"
+            style={{ background: '#161622' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-white font-bold text-[17px]">Editar cliente</p>
+              <button onClick={() => setEditando(null)}><X size={20} className="text-gray-400" /></button>
+            </div>
+            <div className="flex flex-col gap-3">
+              {[['nombre','Nombre *','text'],['telefono','Teléfono / WhatsApp','tel'],['email','Email','email'],['direccion','Dirección','text']].map(([k,l,t]) => (
+                <div key={k}>
+                  <label className="text-gray-500 text-[11px] block mb-1">{l}</label>
+                  <input type={t} value={formEdit[k] || ''} onChange={e => setE(k, e.target.value)} placeholder={l.replace(' *','')}
+                    className="w-full rounded-xl px-4 py-3 text-white text-[14px] outline-none"
+                    style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+                </div>
+              ))}
+              <div>
+                <label className="text-gray-500 text-[11px] block mb-2">Clasificación</label>
+                <div className="flex gap-2">
+                  {Object.entries(CLASIFICACION).map(([k, v]) => (
+                    <button key={k} onClick={() => setE('clasificacion', k)}
+                      className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1"
+                      style={{
+                        background: formEdit.clasificacion === k ? v.color + '22' : '#0D0D14',
+                        color: formEdit.clasificacion === k ? v.color : '#6B7280',
+                        border: `1px solid ${formEdit.clasificacion === k ? v.color + '44' : '#2A2A3A'}`,
+                      }}>
+                      {v.emoji} {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button onClick={guardarEditar} disabled={guardandoEdit || !formEdit.nombre?.trim()}
+              className="w-full py-4 rounded-2xl text-white font-bold text-[15px] mt-5 disabled:opacity-50"
+              style={{ background: '#3B82F6' }}>
+              {guardandoEdit ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* confirmar eliminar */}
+      {confirmEliminar && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-6" style={{ background: 'rgba(0,0,0,.6)' }}>
+          <div className="w-full max-w-[340px] rounded-3xl p-6" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(239,68,68,.12)' }}>
+              <Trash2 size={22} style={{ color: '#EF4444' }} />
+            </div>
+            <p className="text-white font-bold text-[16px] text-center mb-1">Eliminar cliente</p>
+            <p className="text-gray-400 text-[13px] text-center mb-6">
+              ¿Seguro que querés eliminar a <span className="text-white font-semibold">{confirmEliminar.nombre}</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmEliminar(null)}
+                className="flex-1 py-3 rounded-2xl text-gray-300 font-semibold text-[14px]"
+                style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarEliminar}
+                className="flex-1 py-3 rounded-2xl text-white font-bold text-[14px]"
+                style={{ background: '#EF4444' }}>
+                Eliminar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
