@@ -41,16 +41,19 @@ export default function App() {
   const [suscripcion, setSuscripcion] = useState(null)
   const [checkingAcceso, setCheckingAcceso] = useState(false)
   const [notif, setNotif] = useState(null)
-  const notifTimer = useRef(null)
+  const notifTimer  = useRef(null)
+  const notifVistos = useRef(new Set())
 
   useEffect(() => {
     if (!user) return
     const canal = supabase.channel(`presupuestos-${user.id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'presupuestos', filter: `user_id=eq.${user.id}` },
         payload => {
-          if (payload.new?.status === 'aprobado' && payload.old?.status !== 'aprobado') {
+          const id = payload.new?.id
+          if (payload.new?.status === 'aprobado' && payload.old?.status !== 'aprobado' && !notifVistos.current.has(id)) {
+            notifVistos.current.add(id)
             clearTimeout(notifTimer.current)
-            setNotif({ mensaje: `¡Presupuesto #${payload.new.numero} aprobado por el cliente!`, id: payload.new.id })
+            setNotif({ mensaje: `¡Presupuesto #${payload.new.numero} aprobado por el cliente!`, id })
             notifTimer.current = setTimeout(() => setNotif(null), 7000)
             invalidarCacheObras()
           }
