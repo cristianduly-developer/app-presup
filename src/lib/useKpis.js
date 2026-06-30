@@ -7,6 +7,7 @@ export function useKpis() {
   const [obrasEjecucion, setObrasEjecucion] = useState([])
   const [embudo, setEmbudo] = useState([])
   const [porVencer, setPorVencer] = useState([])
+  const [novedades, setNovedades] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { cargar() }, [])
@@ -70,8 +71,19 @@ export function useKpis() {
     setEmbudo(embudoData)
     setObrasEjecucion(obras)
     setPorVencer(porVencerFormated)
+
+    // Novedades: presupuestos aprobados o rechazados en las últimas 24hs
+    const hace24h = new Date(Date.now() - 86400000).toISOString()
+    const { data: nov } = await supabase
+      .from('presupuestos')
+      .select('id, numero, titulo, status, total, updated_at, clientes(nombre)')
+      .in('status', ['aprobado', 'rechazado'])
+      .gte('updated_at', hace24h)
+      .order('updated_at', { ascending: false })
+    setNovedades(nov || [])
+
     setLoading(false)
   }
 
-  return { kpis, agenda, embudo, obrasEjecucion, porVencer, loading, cargar }
+  return { kpis, agenda, embudo, obrasEjecucion, porVencer, novedades, loading, cargar }
 }

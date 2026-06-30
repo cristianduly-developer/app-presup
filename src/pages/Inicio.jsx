@@ -33,7 +33,7 @@ const DOT = { pendiente: '#F97316', confirmada: '#22C55E', cancelada: '#EF4444' 
 export default function Inicio() {
   const navigate = useNavigate()
   const { perfil, user } = useAuth()
-  const { kpis, agenda, embudo, obrasEjecucion, porVencer, loading } = useKpis()
+  const { kpis, agenda, embudo, obrasEjecucion, porVencer, novedades, loading } = useKpis()
 
   const nombreRaw = perfil?.nombre || user?.user_metadata?.full_name || user?.user_metadata?.name || ''
   const nombre = nombreRaw.split(' ')[0] || 'vos'
@@ -57,6 +57,34 @@ export default function Inicio() {
           <p className="text-gray-500 text-[13px]">{hoyFmt}</p>
         </div>
       </div>
+
+      {/* novedades: aprobados / rechazados en las últimas 24hs */}
+      {novedades.length > 0 && (
+        <div className="mx-4 mb-4 flex flex-col gap-2">
+          {novedades.map(p => {
+            const aprobado = p.status === 'aprobado'
+            return (
+              <button key={p.id} onClick={() => navigate(`/presupuestos/${p.id}`)}
+                className="w-full text-left rounded-2xl p-4 flex items-center gap-3"
+                style={{
+                  background: aprobado ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)',
+                  border: `1px solid ${aprobado ? 'rgba(34,197,94,.25)' : 'rgba(239,68,68,.25)'}`,
+                }}>
+                <span className="text-xl shrink-0">{aprobado ? '✅' : '❌'}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[13px]" style={{ color: aprobado ? '#22C55E' : '#EF4444' }}>
+                    {aprobado ? 'Presupuesto aceptado' : 'Presupuesto rechazado'}
+                  </p>
+                  <p className="text-white text-[12px] truncate">
+                    {p.clientes?.nombre || 'Cliente'} · {p.titulo || `#${p.numero}`}
+                  </p>
+                </div>
+                <ChevronRight size={15} className="text-gray-600 shrink-0" />
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* alerta presupuestos por vencer */}
       {porVencer.length > 0 && (

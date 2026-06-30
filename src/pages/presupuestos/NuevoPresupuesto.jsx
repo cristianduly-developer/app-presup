@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Check, Zap } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Check, Zap, ChevronDown } from 'lucide-react'
 import { usePresupuestos } from '../../lib/usePresupuestos'
 import { useClientes } from '../../lib/useClientes'
 import { supabase } from '../../lib/supabase'
@@ -37,6 +37,8 @@ export default function NuevoPresupuesto() {
   const [items, setItems] = useState([{ ...ITEM_VACIO }])
   const [guardando, setGuardando] = useState(false)
   const [plantillaNombre, setPlantillaNombre] = useState('')
+  const [showAddMenu, setShowAddMenu] = useState(false)
+  const [notasOpen, setNotasOpen] = useState(false)
 
   // cargar plantillas disponibles (solo si el plan las incluye)
   useEffect(() => {
@@ -364,7 +366,7 @@ export default function NuevoPresupuesto() {
 
       {/* ── PASO 2: Items ── */}
       {step === 2 && (
-        <div className="px-4 flex flex-col gap-4">
+        <div className="px-4 flex flex-col gap-3">
           {plantillaNombre && (
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.3)' }}>
               <span className="text-[13px]">📋</span>
@@ -372,26 +374,27 @@ export default function NuevoPresupuesto() {
             </div>
           )}
 
-          <p className="text-gray-400 text-[13px]">Agregá materiales y mano de obra</p>
-
-          <div className="rounded-2xl p-3 flex justify-between items-center"
+          {/* barra de totales */}
+          <div className="rounded-2xl px-4 py-3 flex justify-between items-center"
             style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
             <div className="text-center">
               <p className="text-gray-500 text-[10px]">Materiales</p>
-              <p className="text-blue-400 font-bold text-[14px]">{fmt(totalMat)}</p>
+              <p className="text-blue-400 font-bold text-[13px]">{fmt(totalMat)}</p>
             </div>
+            <div className="w-px h-8" style={{ background: '#2A2A3A' }} />
             <div className="text-center">
               <p className="text-gray-500 text-[10px]">Mano de obra</p>
-              <p className="text-orange-400 font-bold text-[14px]">{fmt(totalMO)}</p>
+              <p className="text-orange-400 font-bold text-[13px]">{fmt(totalMO)}</p>
             </div>
+            <div className="w-px h-8" style={{ background: '#2A2A3A' }} />
             <div className="text-center">
               <p className="text-gray-500 text-[10px]">Total</p>
-              <p className="text-white font-bold text-[16px]">{fmt(total)}</p>
+              <p className="text-white font-bold text-[15px]">{fmt(total)}</p>
             </div>
           </div>
 
+          {/* lista de ítems */}
           {items.map((item, idx) => item.tipo === 'seccion' ? (
-            // ── ENCABEZADO DE SECCIÓN ──
             <div key={idx} className="flex items-center gap-2">
               <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
               <div className="flex items-center gap-2 rounded-xl px-3 py-2"
@@ -405,93 +408,144 @@ export default function NuevoPresupuesto() {
                   style={{ color: '#A855F7' }}
                 />
               </div>
-              <button onClick={() => removeItem(idx)} className="text-red-500/50">
+              <button onClick={() => removeItem(idx)} className="text-red-500/50 p-1">
                 <Trash2 size={14} />
               </button>
               <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
             </div>
           ) : (
-            // ── ÍTEM NORMAL ──
             <div key={idx} className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+              {/* header del ítem: badge de tipo + eliminar */}
               <div className="flex items-center justify-between mb-3">
-                <div className="flex gap-2">
-                  {[['material','🔧 Material'],['mano_obra','👷 M. de obra']].map(([k,l]) => (
-                    <button key={k} onClick={() => setItem(idx, 'tipo', k)}
-                      className="px-3 py-1 rounded-full text-[11px] font-semibold"
-                      style={{
-                        background: item.tipo === k ? (k === 'material' ? 'rgba(59,130,246,.2)' : 'rgba(249,115,22,.2)') : '#0D0D14',
-                        color: item.tipo === k ? (k === 'material' ? '#3B82F6' : '#F97316') : '#6B7280',
-                      }}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={() => removeItem(idx)} className="text-red-500/60 disabled:opacity-30" disabled={items.length === 1}>
+                <button
+                  onClick={() => setItem(idx, 'tipo', item.tipo === 'material' ? 'mano_obra' : 'material')}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{
+                    background: item.tipo === 'material' ? 'rgba(59,130,246,.15)' : 'rgba(249,115,22,.15)',
+                    color: item.tipo === 'material' ? '#3B82F6' : '#F97316',
+                  }}>
+                  <span>{item.tipo === 'material' ? '🔧' : '👷'}</span>
+                  <span>{item.tipo === 'material' ? 'Material' : 'Mano de obra'}</span>
+                </button>
+                <button onClick={() => removeItem(idx)} disabled={items.length === 1}
+                  className="p-1 rounded-lg disabled:opacity-20 text-red-500/60 active:text-red-400">
                   <Trash2 size={16} />
                 </button>
               </div>
 
+              {/* descripción */}
               <input value={item.descripcion} onChange={e => setItem(idx,'descripcion',e.target.value)}
-                placeholder="Descripción del ítem"
-                className="w-full rounded-xl px-3 py-2.5 text-white text-[13px] outline-none mb-3"
+                placeholder="¿Qué incluye este ítem?"
+                className="w-full rounded-xl px-3 py-2.5 text-white text-[14px] outline-none mb-3"
                 style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
 
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="text-gray-600 text-[10px]">Cant.</label>
-                  <input type="number" value={item.cantidad} onChange={e => setItem(idx,'cantidad',e.target.value)}
-                    className="w-full rounded-xl px-3 py-2 text-white text-[13px] outline-none mt-1"
-                    style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
-                </div>
-                <div className="w-16">
-                  <label className="text-gray-600 text-[10px]">Unidad</label>
-                  <input value={item.unidad} onChange={e => setItem(idx,'unidad',e.target.value)}
-                    className="w-full rounded-xl px-3 py-2 text-white text-[13px] outline-none mt-1"
-                    style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
-                </div>
-                <div className="flex-[2]">
-                  <label className="text-gray-600 text-[10px]">Precio unitario</label>
-                  <input type="number" value={item.precio_unit || ''} onChange={e => setItem(idx,'precio_unit',e.target.value)}
+              {/* fila de números */}
+              {item.tipo === 'mano_obra' ? (
+                <div>
+                  <label className="text-gray-600 text-[10px]">Precio total $</label>
+                  <input type="number" inputMode="decimal" value={item.precio_unit || ''}
+                    onChange={e => {
+                      setItem(idx, 'precio_unit', e.target.value)
+                      setItem(idx, 'cantidad', 1)
+                      setItem(idx, 'unidad', 'global')
+                    }}
                     placeholder="0"
-                    className="w-full rounded-xl px-3 py-2 text-white text-[13px] outline-none mt-1"
+                    className="w-full rounded-xl px-3 py-2.5 text-white text-[14px] outline-none mt-1"
                     style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
                 </div>
-              </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="w-20 shrink-0">
+                    <label className="text-gray-600 text-[10px]">Cant.</label>
+                    <input type="number" inputMode="decimal" value={item.cantidad}
+                      onChange={e => setItem(idx,'cantidad',e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-white text-[13px] outline-none mt-1 text-center"
+                      style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+                  </div>
+                  <div className="w-16 shrink-0">
+                    <label className="text-gray-600 text-[10px]">Unidad</label>
+                    <input value={item.unidad} onChange={e => setItem(idx,'unidad',e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-white text-[13px] outline-none mt-1 text-center"
+                      style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-gray-600 text-[10px]">Precio $ {item.cantidad > 1 ? '(unitario)' : '(total o unitario)'}</label>
+                    <input type="number" inputMode="decimal" value={item.precio_unit || ''}
+                      onChange={e => setItem(idx,'precio_unit',e.target.value)}
+                      placeholder="0"
+                      className="w-full rounded-xl px-3 py-2 text-white text-[13px] outline-none mt-1"
+                      style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
+                  </div>
+                </div>
+              )}
 
               {item.cantidad > 0 && item.precio_unit > 0 && (
-                <p className="text-right mt-2 font-bold text-[14px]"
+                <p className="text-right mt-2 font-bold text-[13px]"
                   style={{ color: item.tipo === 'material' ? '#3B82F6' : '#F97316' }}>
-                  Subtotal: {fmt(item.cantidad * item.precio_unit)}
+                  = {fmt(item.cantidad * item.precio_unit)}
                 </p>
               )}
             </div>
           ))}
 
-          <div className="flex gap-2">
-            <button onClick={() => addItem('material')}
-              className="flex-1 py-3 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-              style={{ background: 'rgba(59,130,246,.12)', color: '#3B82F6', border: '1px dashed rgba(59,130,246,.3)' }}>
-              <Plus size={14} /> Material
+          {/* botón único + menú */}
+          <div className="relative">
+            <button
+              onClick={() => setShowAddMenu(v => !v)}
+              className="w-full py-3.5 rounded-2xl text-[14px] font-semibold flex items-center justify-center gap-2"
+              style={{ background: 'rgba(59,130,246,.1)', color: '#3B82F6', border: '1px dashed rgba(59,130,246,.35)' }}>
+              <Plus size={16} /> Agregar ítem
             </button>
-            <button onClick={() => addItem('mano_obra')}
-              className="flex-1 py-3 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-              style={{ background: 'rgba(249,115,22,.12)', color: '#F97316', border: '1px dashed rgba(249,115,22,.3)' }}>
-              <Plus size={14} /> M. obra
-            </button>
-            <button onClick={addSeccion}
-              className="flex-1 py-3 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-              style={{ background: 'rgba(168,85,247,.1)', color: '#A855F7', border: '1px dashed rgba(168,85,247,.3)' }}>
-              <Plus size={14} /> Etapa
-            </button>
+            {showAddMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowAddMenu(false)} />
+                <div className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl overflow-hidden z-20 shadow-2xl"
+                  style={{ background: '#1A1A2E', border: '1px solid #2A2A3A' }}>
+                  <button onClick={() => { addItem('material'); setShowAddMenu(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-white/5"
+                    style={{ borderBottom: '1px solid #2A2A3A' }}>
+                    <span className="text-lg">🔧</span>
+                    <div>
+                      <p className="text-white font-semibold text-[14px]">Material</p>
+                      <p className="text-gray-500 text-[11px]">Cemento, caños, pintura...</p>
+                    </div>
+                  </button>
+                  <button onClick={() => { addItem('mano_obra'); setShowAddMenu(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-white/5"
+                    style={{ borderBottom: '1px solid #2A2A3A' }}>
+                    <span className="text-lg">👷</span>
+                    <div>
+                      <p className="text-white font-semibold text-[14px]">Mano de obra</p>
+                      <p className="text-gray-500 text-[11px]">Instalación, mano de obra, traslado...</p>
+                    </div>
+                  </button>
+                  <button onClick={() => { addSeccion(); setShowAddMenu(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-white/5">
+                    <span className="text-lg">📌</span>
+                    <div>
+                      <p className="text-white font-semibold text-[14px]">Etapa / Sección</p>
+                      <p className="text-gray-500 text-[11px]">Separador para organizar los ítems</p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
-          <div>
-            <label className="text-gray-500 text-[11px] mb-1 block">Notas internas (solo vos las ves)</label>
+          {/* notas colapsables */}
+          <button onClick={() => setNotasOpen(v => !v)}
+            className="flex items-center justify-between w-full px-4 py-3 rounded-2xl text-left"
+            style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            <span className="text-gray-400 text-[13px]">📝 Notas internas <span className="text-gray-600 text-[11px]">(solo vos las ves)</span></span>
+            <ChevronDown size={16} className={`text-gray-500 transition-transform ${notasOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {notasOpen && (
             <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={3}
               placeholder="Observaciones, acuerdos con el cliente..."
+              autoFocus
               className="w-full rounded-2xl px-4 py-3 text-white text-[13px] outline-none resize-none"
-              style={{ background: '#161622', border: '1px solid #1E1E2E' }} />
-          </div>
+              style={{ background: '#161622', border: '1px solid #3B82F6' }} />
+          )}
 
           {editarId ? (
             <button onClick={() => guardar()} disabled={guardando}

@@ -243,6 +243,22 @@ export default function LinkPublico() {
         {/* botón aceptar / panel firma */}
         {p.status === 'enviado' && !vencido && (
           <>
+            {/* cartel de seña */}
+            {p.senia_activa && p.senia_porcentaje > 0 && (
+              <div className="rounded-2xl p-4" style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.25)' }}>
+                <p className="text-yellow-400 font-bold text-[14px] mb-1">💰 Seña para confirmar el trabajo</p>
+                <p className="text-white font-bold text-[26px]">
+                  {fmt(Math.round(p.total * p.senia_porcentaje / 100))}
+                  <span className="text-gray-500 font-normal text-[13px] ml-2">({p.senia_porcentaje}% del total)</span>
+                </p>
+                {prof?.telefono && (
+                  <p className="text-gray-400 text-[12px] mt-2">
+                    Coordiná el pago con <strong className="text-white">{prof.nombre}</strong> antes de confirmar.
+                  </p>
+                )}
+              </div>
+            )}
+
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
 
             <button onClick={() => { setNombreFirma(p.cliente_nombre || p.clientes?.nombre || ''); setShowFirma(true) }}

@@ -30,6 +30,8 @@ export default function Configuracion() {
         recargo_nocturno:  perfil.recargo_nocturno || 50,
         recargo_feriado:   perfil.recargo_feriado || 100,
         whatsapp_msg:      perfil.whatsapp_msg || 'Hola {cliente}, te envío el presupuesto #{numero} por {total}. Podés verlo acá: {link}',
+        senia_activa:      perfil.senia_activa ?? false,
+        senia_porcentaje:  perfil.senia_porcentaje ?? 30,
       })
     }
   }, [perfil])
@@ -56,6 +58,8 @@ export default function Configuracion() {
       recargo_nocturno: Number(form.recargo_nocturno),
       recargo_feriado:  Number(form.recargo_feriado),
       whatsapp_msg:     form.whatsapp_msg,
+      senia_activa:     form.senia_activa,
+      senia_porcentaje: Number(form.senia_porcentaje),
     })
     setGuardando(false)
     if (!error) {
@@ -139,6 +143,25 @@ export default function Configuracion() {
             style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }} />
           <p className="text-gray-600 text-[10px] mt-1">Variables: {'{cliente}'} {'{numero}'} {'{total}'} {'{link}'}</p>
         </div>
+      </Section>
+
+      <Section title="SEÑA">
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1E1E2E' }}>
+          <div>
+            <p className="text-gray-400 text-[13px]">Mostrar seña al cliente</p>
+            <p className="text-gray-600 text-[11px] mt-0.5">Aparece en el link del presupuesto</p>
+          </div>
+          <button onClick={() => set('senia_activa', !form.senia_activa)}
+            className="w-11 h-6 rounded-full transition-all shrink-0 relative"
+            style={{ background: form.senia_activa ? '#22C55E' : '#2A2A3A' }}>
+            <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+              style={{ left: form.senia_activa ? 'calc(100% - 22px)' : '2px' }} />
+          </button>
+        </div>
+        {form.senia_activa && (
+          <Field label="Porcentaje de seña (%)" value={form.senia_porcentaje}
+            onChange={v => set('senia_porcentaje', v)} type="number" placeholder="30" />
+        )}
       </Section>
 
       <Section title="CUENTA">
