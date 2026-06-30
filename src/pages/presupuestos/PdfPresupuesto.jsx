@@ -96,25 +96,25 @@ export default function PdfPresupuesto() {
         {/* banda superior */}
         <div style={{ background:VERDE, height:5 }} />
 
-        <div style={{ padding:'36px 44px 44px' }}>
+        <div style={{ padding:'24px 36px 32px' }}>
 
           {/* ─── ENCABEZADO: profesional izq, presupuesto der ─── */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:28, paddingBottom:24, borderBottom:`1px solid ${LINEA}` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18, paddingBottom:16, borderBottom:`1px solid ${LINEA}` }}>
 
             {/* profesional */}
             <div style={{ display:'flex', alignItems:'flex-start', gap:14 }}>
               {perfil?.logo_url
-                ? <img src={perfil.logo_url} alt="Logo" style={{ width:60, height:60, objectFit:'contain', borderRadius:10, border:`1px solid ${LINEA}` }} />
-                : <div style={{ width:60, height:60, background:VERDE, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', fontWeight:800, flexShrink:0 }}>
+                ? <img src={perfil.logo_url} alt="Logo" style={{ width:52, height:52, objectFit:'contain', borderRadius:8, border:`1px solid ${LINEA}` }} />
+                : <div style={{ width:52, height:52, background:VERDE, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, color:'#fff', fontWeight:800, flexShrink:0 }}>
                     {inicialProf}
                   </div>
               }
               <div>
-                <div style={{ fontSize:18, fontWeight:800, color:NEGRO, marginBottom:2 }}>{perfil?.nombre || 'Profesional'}</div>
-                {perfil?.oficio && <div style={{ fontSize:10, color:ACENTO, fontWeight:700, textTransform:'uppercase', letterSpacing:0.8, marginBottom:6 }}>
+                <div style={{ fontSize:16, fontWeight:800, color:NEGRO, marginBottom:1 }}>{perfil?.nombre || 'Profesional'}</div>
+                {perfil?.oficio && <div style={{ fontSize:10, color:ACENTO, fontWeight:700, textTransform:'uppercase', letterSpacing:0.8, marginBottom:4 }}>
                   {perfil.oficio.charAt(0).toUpperCase() + perfil.oficio.slice(1)}
                 </div>}
-                <div style={{ fontSize:11, color:GRIS, lineHeight:1.9 }}>
+                <div style={{ fontSize:10, color:GRIS, lineHeight:1.7 }}>
                   {profUbicacion  && <div>{profUbicacion}</div>}
                   {perfil?.telefono && <div>{perfil.telefono}</div>}
                   {perfil?.cuit    && <div>CUIT {perfil.cuit}</div>}
@@ -125,10 +125,10 @@ export default function PdfPresupuesto() {
             </div>
 
             {/* número + fechas */}
-            <div style={{ textAlign:'right', minWidth:180 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2.5, textTransform:'uppercase', marginBottom:2 }}>Presupuesto</div>
-              <div style={{ fontSize:46, fontWeight:900, color:VERDE, lineHeight:1, marginBottom:8, letterSpacing:-1 }}>#{p.numero}</div>
-              <div style={{ fontSize:11, color:GRIS, lineHeight:2 }}>
+            <div style={{ textAlign:'right', minWidth:160 }}>
+              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2.5, textTransform:'uppercase', marginBottom:1 }}>Presupuesto</div>
+              <div style={{ fontSize:38, fontWeight:900, color:VERDE, lineHeight:1, marginBottom:6, letterSpacing:-1 }}>#{p.numero}</div>
+              <div style={{ fontSize:11, color:GRIS, lineHeight:1.8 }}>
                 <div>Fecha: <strong style={{ color:NEGRO }}>{fmtFecha(p.created_at)}</strong></div>
                 <div>Validez: <strong style={{ color:NEGRO }}>{p.vigencia_dias} días</strong></div>
                 {p.fecha_vence && <div>Vence: <strong style={{ color:NEGRO }}>{fmtFecha(p.fecha_vence)}</strong></div>}
@@ -141,15 +141,15 @@ export default function PdfPresupuesto() {
 
           {/* ─── CLIENTE ─── */}
           {p.clientes && (
-            <div style={{ marginBottom:24 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:10 }}>Cliente</div>
-              <div style={{ background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:10, padding:'14px 20px', display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:40, height:40, borderRadius:'50%', background:VERDE, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, fontWeight:800, color:'#fff', flexShrink:0 }}>
+            <div style={{ marginBottom:16 }}>
+              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:6 }}>Cliente</div>
+              <div style={{ background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:8, padding:'10px 16px', display:'flex', alignItems:'center', gap:12 }}>
+                <div style={{ width:34, height:34, borderRadius:'50%', background:VERDE, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:800, color:'#fff', flexShrink:0 }}>
                   {inicialCli}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:800, fontSize:15, color:NEGRO, marginBottom:3 }}>{p.clientes.nombre}</div>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 24px', fontSize:11, color:GRIS }}>
+                  <div style={{ fontWeight:800, fontSize:14, color:NEGRO, marginBottom:2 }}>{p.clientes.nombre}</div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:'2px 20px', fontSize:11, color:GRIS }}>
                     {p.clientes.telefono  && <span>☎ {p.clientes.telefono}</span>}
                     {p.clientes.email     && <span>✉ {p.clientes.email}</span>}
                     {p.clientes.direccion && <span>📍 {p.clientes.direccion}</span>}
@@ -162,15 +162,15 @@ export default function PdfPresupuesto() {
 
           {/* ─── TÍTULO DEL TRABAJO ─── */}
           {p.titulo && (
-            <div style={{ marginBottom:24, padding:'12px 20px', background:'#fff', border:`1px solid ${LINEA}`, borderLeft:`4px solid ${VERDE}`, borderRadius:6 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:4 }}>Trabajo</div>
-              <div style={{ fontSize:16, fontWeight:800, color:NEGRO }}>{p.titulo}</div>
+            <div style={{ marginBottom:16, padding:'9px 16px', background:'#fff', border:`1px solid ${LINEA}`, borderLeft:`4px solid ${VERDE}`, borderRadius:6 }}>
+              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:2 }}>Trabajo</div>
+              <div style={{ fontSize:15, fontWeight:800, color:NEGRO }}>{p.titulo}</div>
             </div>
           )}
 
           {/* ─── TABLA ITEMS ─── */}
-          <div style={{ marginBottom:24 }}>
-            <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:10 }}>Detalle</div>
+          <div style={{ marginBottom:16 }}>
+            <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:6 }}>Detalle</div>
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
                 <tr style={{ background:VERDE }}>
@@ -191,17 +191,17 @@ export default function PdfPresupuesto() {
                   </tr>
                 ) : (
                   <tr key={i} style={{ borderBottom:`1px solid ${LINEA}`, background: i % 2 === 0 ? '#fff' : '#FAFAF8' }}>
-                    <td style={{ padding:'10px 12px', verticalAlign:'top' }}>
-                      <div style={{ fontWeight:600, color:NEGRO }}>
+                    <td style={{ padding:'7px 10px', verticalAlign:'top' }}>
+                      <div style={{ fontWeight:600, color:NEGRO, fontSize:12 }}>
                         {item.descripcion || (item.tipo === 'mano_obra' ? 'Mano de obra' : 'Material')}
                       </div>
                       {item.unidad && item.unidad !== 'global' && (
-                        <div style={{ fontSize:10, color:'#9CA3AF', marginTop:2 }}>{item.unidad}</div>
+                        <div style={{ fontSize:9, color:'#9CA3AF', marginTop:1 }}>{item.unidad}</div>
                       )}
                     </td>
-                    <td style={{ padding:'10px 12px', textAlign:'center', color:GRIS }}>{item.cantidad}</td>
-                    <td style={{ padding:'10px 12px', textAlign:'right', color:GRIS }}>{fmt(item.precio_unit)}</td>
-                    <td style={{ padding:'10px 12px', textAlign:'right', fontWeight:700, color:NEGRO }}>{fmt(item.subtotal || item.cantidad * item.precio_unit)}</td>
+                    <td style={{ padding:'7px 10px', textAlign:'center', color:GRIS, fontSize:12 }}>{item.cantidad}</td>
+                    <td style={{ padding:'7px 10px', textAlign:'right', color:GRIS, fontSize:12 }}>{fmt(item.precio_unit)}</td>
+                    <td style={{ padding:'7px 10px', textAlign:'right', fontWeight:700, color:NEGRO, fontSize:12 }}>{fmt(item.subtotal || item.cantidad * item.precio_unit)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -236,8 +236,8 @@ export default function PdfPresupuesto() {
 
           {/* ─── NOTAS ─── */}
           {p.notas_internas && (
-            <div style={{ marginBottom:24 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:8 }}>Observaciones</div>
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:5 }}>Observaciones</div>
               <div style={{ fontSize:12, color:'#374151', lineHeight:1.8, background:VERDE2, borderRadius:8, padding:'12px 16px', border:`1px solid ${LINEA}` }}>
                 {p.notas_internas}
               </div>
@@ -246,7 +246,7 @@ export default function PdfPresupuesto() {
 
           {/* ─── FIRMA ─── */}
           {p.firma_imagen && (
-            <div style={{ marginBottom:24 }}>
+            <div style={{ marginBottom:14 }}>
               <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:10 }}>Firma del cliente</div>
               <div style={{ display:'flex', alignItems:'flex-end', gap:48 }}>
                 <div>
@@ -269,7 +269,7 @@ export default function PdfPresupuesto() {
           )}
 
           {/* ─── FOOTER ─── */}
-          <div style={{ marginTop:28, paddingTop:18, borderTop:`1px solid ${LINEA}` }}>
+          <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${LINEA}` }}>
             {(perfil?.cbu || perfil?.alias_banco) && (
               <div style={{ background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:8, padding:'11px 16px', marginBottom:12, fontSize:12, color:NEGRO }}>
                 <div style={{ fontWeight:700, marginBottom:4, color:VERDE }}>Datos para transferencia</div>
