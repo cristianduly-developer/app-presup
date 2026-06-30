@@ -442,6 +442,14 @@ export default function DetallePresupuesto() {
                   <span className="text-white font-medium text-[14px]">Marcar como aprobado</span>
                 </button>
               )}
+              {p.status === 'aprobado' && (
+                <button onClick={() => cambiarStatus('en_obra')}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left"
+                  style={{ background: '#0D0D14' }}>
+                  <CheckCircle size={16} style={{ color: '#F97316' }} />
+                  <span className="text-white font-medium text-[14px]">Iniciar obra</span>
+                </button>
+              )}
               <button onClick={() => { setShowMas(false); setConfirmEliminar(true) }}
                 className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left mt-1"
                 style={{ background: 'rgba(239,68,68,.08)' }}>
