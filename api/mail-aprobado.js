@@ -1,10 +1,147 @@
-const MAIL_FROM    = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
-const MAIL_ADMIN   = 'cristianduly@gmail.com'
-const APP_URL      = 'https://presupuestos.solucionesmdp.com.ar'
-const WA_SOPORTE   = '5492235767784'
+const MAIL_FROM  = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
+const APP_URL    = 'https://presupuestos.solucionesmdp.com.ar'
+const WA_SOPORTE = '5492235767784'
 
 function fmt(n) {
   return '$' + Number(n || 0).toLocaleString('es-AR')
+}
+
+function fmtFecha(str) {
+  if (!str) return ''
+  return new Date(str).toLocaleDateString('es-AR')
+}
+
+function tablaItems(items) {
+  const filas = (items || []).map(i => {
+    if (i.tipo === 'seccion') return `
+      <tr>
+        <td colspan="4" style="padding:8px 12px;background:#f0f4f0;border-left:3px solid #3D5A3E;font-size:10px;font-weight:700;color:#3D5A3E;text-transform:uppercase;letter-spacing:.5px;">
+          ${i.descripcion || 'Etapa'}
+        </td>
+      </tr>`
+    return `
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:9px 12px;color:#1A1A1A;font-weight:600;font-size:13px;">
+          ${i.descripcion || (i.tipo === 'mano_obra' ? 'Mano de obra' : 'Material')}
+        </td>
+        <td style="padding:9px 12px;color:#6B7280;text-align:center;font-size:13px;">${i.cantidad}</td>
+        <td style="padding:9px 12px;color:#6B7280;text-align:right;font-size:13px;">${fmt(i.precio_unit)}</td>
+        <td style="padding:9px 12px;color:#1A1A1A;font-weight:700;text-align:right;font-size:13px;">${fmt(i.subtotal || i.cantidad * i.precio_unit)}</td>
+      </tr>`
+  }).join('')
+
+  return `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:4px;">
+      <thead>
+        <tr style="background:#3D5A3E;">
+          <th style="text-align:left;padding:8px 12px;font-size:9px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;">Descripción</th>
+          <th style="text-align:center;padding:8px 12px;font-size:9px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;width:50px;">Cant.</th>
+          <th style="text-align:right;padding:8px 12px;font-size:9px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;width:100px;">P. Unit.</th>
+          <th style="text-align:right;padding:8px 12px;font-size:9px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;width:100px;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+    </table>`
+}
+
+function bloqueSeña(senia_activa, senia_porcentaje, total) {
+  if (!senia_activa || !senia_porcentaje || senia_porcentaje <= 0) return ''
+  const monto = Math.round(total * senia_porcentaje / 100)
+  return `
+    <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:12px 16px;margin-top:8px;">
+      <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:2px;">💰 Seña requerida para confirmar (${senia_porcentaje}%)</div>
+      <div style="font-size:20px;font-weight:900;color:#92400E;">${fmt(monto)}</div>
+    </div>`
+}
+
+function bloqueCliente(cliente) {
+  const lineas = [
+    cliente.telefono  && `☎ ${cliente.telefono}`,
+    cliente.email     && `✉ ${cliente.email}`,
+    cliente.direccion && `📍 ${cliente.direccion}`,
+  ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;')
+  return `
+    <div style="background:#f0f4f0;border:1px solid #E2E8E2;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:#3D5A3E;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;">
+        ${cliente.nombre.charAt(0).toUpperCase()}
+      </div>
+      <div>
+        <div style="font-weight:800;font-size:15px;color:#1A1A1A;margin-bottom:3px;">${cliente.nombre}</div>
+        ${lineas ? `<div style="font-size:11px;color:#6B7280;">${lineas}</div>` : ''}
+      </div>
+    </div>`
+}
+
+function bloqueProfesional(profesional) {
+  const lineas = [
+    profesional.telefono && `☎ ${profesional.telefono}`,
+    profesional.email    && `✉ ${profesional.email}`,
+  ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;')
+  return `
+    <div style="background:#f0f4f0;border:1px solid #E2E8E2;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
+      <div style="font-weight:800;font-size:14px;color:#1A1A1A;margin-bottom:2px;">${profesional.nombre}${profesional.oficio ? `<span style="font-weight:400;color:#5C7A5D;font-size:12px;margin-left:8px;">${profesional.oficio}</span>` : ''}</div>
+      ${lineas ? `<div style="font-size:11px;color:#6B7280;">${lineas}</div>` : ''}
+    </div>`
+}
+
+function bloqueInfo(presupuesto) {
+  return `
+    <div style="display:flex;gap:24px;margin-bottom:8px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">Presupuesto</div>
+        <div style="font-size:28px;font-weight:900;color:#3D5A3E;line-height:1;">#${presupuesto.numero}</div>
+        ${presupuesto.titulo ? `<div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-top:3px;">${presupuesto.titulo}</div>` : ''}
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">Fecha</div>
+        <div style="font-size:13px;font-weight:600;color:#1A1A1A;">${fmtFecha(presupuesto.fecha_emision)}</div>
+        <div style="font-size:11px;color:#6B7280;">Validez: ${presupuesto.vigencia_dias || '—'} días</div>
+        ${presupuesto.fecha_vence ? `<div style="font-size:11px;color:#6B7280;">Vence: ${fmtFecha(presupuesto.fecha_vence)}</div>` : ''}
+      </div>
+    </div>`
+}
+
+function bloqueTotal(presupuesto) {
+  return `
+    <div style="background:#3D5A3E;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+      <span style="font-weight:700;font-size:13px;color:#fff;letter-spacing:1px;text-transform:uppercase;">Total</span>
+      <span style="font-weight:900;font-size:22px;color:#fff;">${fmt(presupuesto.total)}</span>
+    </div>
+    ${bloqueSeña(presupuesto.senia_activa, presupuesto.senia_porcentaje, presupuesto.total)}`
+}
+
+function bloqueFirma(firma_imagen, firma_nombre, fecha_firma) {
+  if (!firma_imagen) return ''
+  return `
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E2E8E2;">
+      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Firma del cliente</div>
+      <div style="border:1px solid #E2E8E2;border-radius:8px;padding:8px;background:#FAFAF8;display:inline-block;">
+        <img src="${firma_imagen}" alt="Firma" style="height:60px;max-width:200px;display:block;" />
+      </div>
+      <div style="margin-top:4px;font-size:11px;font-weight:700;color:#1A1A1A;">${firma_nombre || ''}</div>
+      ${fecha_firma ? `<div style="font-size:10px;color:#6B7280;">${new Date(fecha_firma).toLocaleString('es-AR')}</div>` : ''}
+    </div>`
+}
+
+function layout(header, contenido) {
+  return `
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:580px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+      <div style="background:#3D5A3E;height:5px;"></div>
+      <div style="padding:28px 28px 8px;">
+        <h1 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#1A1A1A;">${header.titulo}</h1>
+        <p style="margin:0 0 20px;font-size:13px;color:#6B7280;">${header.subtitulo}</p>
+      </div>
+      <div style="padding:0 28px 28px;">
+        ${contenido}
+      </div>
+      <div style="border-top:1px solid #F3F4F6;padding:14px 28px;background:#FAFAF8;">
+        <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
+          App Presupuestos · Soluciones MDP ·
+          <a href="https://wa.me/${WA_SOPORTE}" style="color:#9CA3AF;">Soporte</a>
+        </p>
+      </div>
+      <div style="background:#3D5A3E;height:4px;"></div>
+    </div>`
 }
 
 export default async function handler(req, res) {
@@ -15,110 +152,48 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false })
 
   const { presupuesto, cliente, profesional } = req.body || {}
-  if (!presupuesto || !cliente || !profesional) {
+  if (!presupuesto || !cliente || !profesional)
     return res.status(400).json({ ok: false, error: 'datos_incompletos' })
-  }
 
-  const { numero, titulo, total, fecha_vence, items = [] } = presupuesto
-  const itemsHTML = items.filter(i => i.tipo !== 'seccion').map(i => `
-    <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#374151;">
-        ${i.descripcion || (i.tipo === 'mano_obra' ? 'Mano de obra' : 'Material')}
-      </td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#6B7280;text-align:right;">
-        ${fmt(i.cantidad * i.precio_unit)}
-      </td>
-    </tr>`).join('')
+  const { numero, titulo, firma_imagen, firma_nombre } = presupuesto
 
-  // ── Mail al cliente ───────────────────────────────────────────────
-  const htmlCliente = `
-    <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb;">
-      <div style="background:#1D4ED8;padding:32px 28px;text-align:center;">
-        <div style="font-size:38px;margin-bottom:10px;">✅</div>
-        <h1 style="color:#fff;margin:0 0 6px;font-size:22px;font-weight:800;">¡Presupuesto aceptado!</h1>
-        <p style="color:rgba(255,255,255,.85);margin:0;font-size:14px;">Tu confirmación fue registrada correctamente</p>
-      </div>
-      <div style="padding:32px 28px;">
-        <p style="color:#374151;font-size:15px;margin:0 0 24px;">Hola <strong>${cliente.nombre}</strong>, confirmamos que aceptaste el presupuesto de <strong>${profesional.nombre}</strong>.</p>
+  // ── Mail al PROFESIONAL ──────────────────────────────────────────────
+  const htmlProf = layout(
+    { titulo: `🎉 ¡Presupuesto #${numero} aprobado!`, subtitulo: `${cliente.nombre} aceptó y firmó tu presupuesto.` },
+    `${bloqueInfo(presupuesto)}
+     <hr style="border:none;border-top:1px solid #E2E8E2;margin:16px 0;">
+     <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Cliente</div>
+     ${bloqueCliente(cliente)}
+     <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Detalle</div>
+     ${tablaItems(presupuesto.items)}
+     ${bloqueTotal(presupuesto)}
+     ${bloqueFirma(firma_imagen, firma_nombre, null)}
+     <div style="text-align:center;margin-top:24px;">
+       <a href="${APP_URL}" style="display:inline-block;background:#3D5A3E;color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">
+         Ver en la app →
+       </a>
+     </div>`
+  )
 
-        <div style="background:#F9FAFB;border-radius:10px;padding:20px;margin-bottom:24px;border:1px solid #F3F4F6;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <div>
-              <div style="font-size:11px;color:#9CA3AF;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Presupuesto</div>
-              <div style="font-size:22px;font-weight:900;color:#1D4ED8;">#${numero}${titulo ? ' · ' + titulo : ''}</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px;color:#9CA3AF;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Total</div>
-              <div style="font-size:24px;font-weight:900;color:#111827;">${fmt(total)}</div>
-            </div>
-          </div>
-
-          ${itemsHTML ? `<table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <tbody>${itemsHTML}</tbody>
-          </table>` : ''}
-        </div>
-
-        <div style="background:#F0FDF4;border-radius:10px;padding:16px 20px;margin-bottom:24px;border:1px solid #BBF7D0;">
-          <p style="margin:0 0 8px;font-weight:700;color:#14532D;font-size:13px;">¿Qué pasa ahora?</p>
-          <p style="margin:0 0 6px;color:#166534;font-size:13px;">✅ ${profesional.nombre} ya fue notificado/a</p>
-          <p style="margin:0 0 6px;color:#166534;font-size:13px;">📞 Te contactará para coordinar el inicio del trabajo</p>
-          ${fecha_vence ? '' : ''}
-        </div>
-
-        ${profesional.telefono ? `
-        <div style="text-align:center;">
-          <a href="https://wa.me/${profesional.telefono.replace(/\D/g,'')}"
-            style="display:inline-block;background:#22C55E;color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">
-            💬 Contactar a ${profesional.nombre}
-          </a>
-        </div>` : ''}
-      </div>
-      <div style="border-top:1px solid #F3F4F6;padding:18px 28px;text-align:center;">
-        <p style="margin:0;color:#9CA3AF;font-size:11px;">
-          App Presupuestos · Soluciones MDP ·
-          <a href="https://wa.me/${WA_SOPORTE}" style="color:#9CA3AF;">Soporte</a>
-        </p>
-      </div>
-    </div>`
-
-  // ── Mail al profesional ───────────────────────────────────────────
-  const htmlProfesional = `
-    <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb;">
-      <div style="background:#16A34A;padding:32px 28px;text-align:center;">
-        <div style="font-size:38px;margin-bottom:10px;">🎉</div>
-        <h1 style="color:#fff;margin:0 0 6px;font-size:22px;font-weight:800;">¡Presupuesto aprobado!</h1>
-        <p style="color:rgba(255,255,255,.85);margin:0;font-size:14px;">${cliente.nombre} aceptó tu presupuesto</p>
-      </div>
-      <div style="padding:32px 28px;">
-        <div style="background:#F9FAFB;border-radius:10px;padding:20px;margin-bottom:24px;border:1px solid #F3F4F6;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div>
-              <div style="font-size:11px;color:#9CA3AF;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Presupuesto</div>
-              <div style="font-size:22px;font-weight:900;color:#1D4ED8;">#${numero}${titulo ? ' · ' + titulo : ''}</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px;color:#9CA3AF;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Total</div>
-              <div style="font-size:24px;font-weight:900;color:#16A34A;">${fmt(total)}</div>
-            </div>
-          </div>
-          <div style="padding-top:12px;border-top:1px solid #F3F4F6;font-size:13px;color:#6B7280;">
-            <strong style="color:#374151;">Cliente:</strong> ${cliente.nombre}
-            ${cliente.telefono ? ` · <a href="https://wa.me/${cliente.telefono.replace(/\D/g,'')}" style="color:#16A34A;font-weight:700;">WhatsApp</a>` : ''}
-            ${cliente.email ? ` · ${cliente.email}` : ''}
-          </div>
-        </div>
-
-        <div style="text-align:center;">
-          <a href="${APP_URL}"
-            style="display:inline-block;background:#1D4ED8;color:#fff;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;">
-            Ver en App Presupuestos →
-          </a>
-        </div>
-      </div>
-      <div style="border-top:1px solid #F3F4F6;padding:18px 28px;text-align:center;">
-        <p style="margin:0;color:#9CA3AF;font-size:11px;">App Presupuestos · Soluciones MDP</p>
-      </div>
-    </div>`
+  // ── Mail al CLIENTE ──────────────────────────────────────────────────
+  const htmlCli = layout(
+    { titulo: `✅ Confirmaste el presupuesto #${numero}`, subtitulo: `Tu aceptación fue registrada. ${profesional.nombre} fue notificado/a.` },
+    `${bloqueInfo(presupuesto)}
+     <hr style="border:none;border-top:1px solid #E2E8E2;margin:16px 0;">
+     <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Profesional</div>
+     ${bloqueProfesional(profesional)}
+     <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Detalle</div>
+     ${tablaItems(presupuesto.items)}
+     ${bloqueTotal(presupuesto)}
+     ${bloqueFirma(firma_imagen, firma_nombre, null)}
+     ${profesional.telefono ? `
+     <div style="text-align:center;margin-top:24px;">
+       <a href="https://wa.me/${profesional.telefono.replace(/\D/g,'')}"
+         style="display:inline-block;background:#22C55E;color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">
+         💬 Contactar a ${profesional.nombre}
+       </a>
+     </div>` : ''}`
+  )
 
   try {
     const headers = {
@@ -127,27 +202,25 @@ export default async function handler(req, res) {
     }
 
     const mails = [
-      // al profesional siempre
       fetch('https://api.resend.com/emails', {
         method: 'POST', headers,
         body: JSON.stringify({
           from: MAIL_FROM,
           to: profesional.email,
-          subject: `🎉 ¡Presupuesto #${numero} aprobado por ${cliente.nombre}!`,
-          html: htmlProfesional,
+          subject: `🎉 Presupuesto #${numero} aprobado por ${cliente.nombre}`,
+          html: htmlProf,
         }),
       }),
     ]
 
-    // al cliente solo si tiene email
     if (cliente.email) {
       mails.push(fetch('https://api.resend.com/emails', {
         method: 'POST', headers,
         body: JSON.stringify({
           from: MAIL_FROM,
           to: cliente.email,
-          subject: `✅ Confirmación: aceptaste el presupuesto #${numero} de ${profesional.nombre}`,
-          html: htmlCliente,
+          subject: `✅ Confirmaste el presupuesto #${numero} de ${profesional.nombre}`,
+          html: htmlCli,
         }),
       }))
     }

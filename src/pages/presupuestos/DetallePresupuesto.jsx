@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, MessageCircle, Download, Pencil, Trash2, Copy, BookmarkPlus, Play, X, DollarSign } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Download, Pencil, Trash2, Copy, BookmarkPlus, Play, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { usePlan, tieneFeature } from '../../lib/PlanContext'
 import { fmt } from '../../lib/fmt'
@@ -21,9 +21,6 @@ export default function DetallePresupuesto() {
 
   const [p, setP] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showPago, setShowPago] = useState(false)
-  const [montoPago, setMontoPago] = useState('')
-  const [guardandoPago, setGuardandoPago] = useState(false)
   const [eliminando, setEliminando] = useState(false)
   const [confirmEliminar, setConfirmEliminar] = useState(false)
   const [iniciando, setIniciando] = useState(false)
@@ -78,23 +75,6 @@ export default function DetallePresupuesto() {
     const trabajo = p.titulo ? ` — ${p.titulo}` : ''
     const msg = encodeURIComponent(`Hola ${p.clientes.nombre}, te envío el presupuesto #${p.numero}${trabajo} por ${fmt(p.total)}. Podés verlo acá: ${url}`)
     window.open(`https://wa.me/${tel}?text=${msg}`)
-  }
-
-  async function registrarPago() {
-    if (!montoPago || isNaN(montoPago) || Number(montoPago) <= 0) return
-    setGuardandoPago(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('pagos').insert({
-      user_id: user.id,
-      presupuesto_id: id,
-      monto: Number(montoPago),
-      metodo: 'efectivo',
-      fecha: new Date().toISOString().split('T')[0],
-    })
-    setMontoPago('')
-    setShowPago(false)
-    setGuardandoPago(false)
-    cargar()
   }
 
   async function duplicar() {
@@ -173,8 +153,8 @@ export default function DetallePresupuesto() {
     </div>
   )
 
-  const cobrado = (p.pagos || []).reduce((s, pg) => s + pg.monto, 0)
-  const pendiente = p.total - cobrado
+  const cobrado = 0
+  const pendiente = p.total
   const st = STATUS_STYLE[p.status] || STATUS_STYLE.borrador
   const items = (p.presupuesto_items || []).sort((a, b) => a.orden - b.orden)
   const totalMat = items.filter(i => i.tipo === 'material').reduce((s, i) => s + (i.subtotal || 0), 0)
@@ -317,15 +297,6 @@ export default function DetallePresupuesto() {
           <p className="text-gray-500 text-[10px] font-semibold tracking-wider mb-3">ACCIONES</p>
           <div className="flex flex-col gap-2">
 
-            {/* registrar pago - solo si tiene saldo */}
-            {pendiente > 0 && (
-              <button onClick={() => setShowPago(true)}
-                className="w-full py-3.5 rounded-2xl text-white font-bold text-[14px] flex items-center justify-center gap-2"
-                style={{ background: '#22C55E' }}>
-                <DollarSign size={16} /> Registrar pago
-              </button>
-            )}
-
             {/* iniciar obra - solo si aprobado */}
             {p.status === 'aprobado' && (
               <button onClick={iniciarObra} disabled={iniciando}
@@ -392,33 +363,6 @@ export default function DetallePresupuesto() {
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[80] px-5 py-3 rounded-2xl text-white text-[13px] font-semibold"
           style={{ background: '#22C55E' }}>
           {toastMsg}
-        </div>
-      )}
-
-      {/* modal registrar pago */}
-      {showPago && (
-        <div className="fixed inset-0 z-[60] flex items-end" onClick={() => setShowPago(false)}>
-          <div className="w-full max-w-[430px] mx-auto rounded-t-3xl p-6"
-            style={{ background: '#161622', border: '1px solid #1E1E2E' }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-white font-bold text-[17px]">Registrar pago</p>
-              <button onClick={() => setShowPago(false)}><X size={20} className="text-gray-400" /></button>
-            </div>
-            <p className="text-gray-500 text-[12px] mb-3">Saldo pendiente: {fmt(pendiente)}</p>
-            <input
-              type="number" placeholder="Monto recibido" value={montoPago}
-              onChange={e => setMontoPago(e.target.value)}
-              className="w-full rounded-2xl px-4 py-4 text-white text-[18px] font-bold outline-none mb-4"
-              style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}
-              autoFocus
-            />
-            <button onClick={registrarPago} disabled={guardandoPago || !montoPago}
-              className="w-full py-4 rounded-2xl text-white font-bold text-[15px] disabled:opacity-50"
-              style={{ background: '#22C55E' }}>
-              {guardandoPago ? 'Guardando...' : `Registrar ${montoPago ? fmt(Number(montoPago)) : ''}`}
-            </button>
-          </div>
         </div>
       )}
 

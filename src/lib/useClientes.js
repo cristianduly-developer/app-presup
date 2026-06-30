@@ -23,5 +23,18 @@ export function useClientes() {
     return { data, error }
   }
 
-  return { clientes, loading, cargar, crear }
+  async function actualizar(id, datos) {
+    const { data, error } = await supabase
+      .from('clientes').update(datos).eq('id', id).select().single()
+    if (!error) setClientes(prev => prev.map(c => c.id === id ? data : c))
+    return { data, error }
+  }
+
+  async function eliminar(id) {
+    const { error } = await supabase.from('clientes').delete().eq('id', id)
+    if (!error) setClientes(prev => prev.filter(c => c.id !== id))
+    return { error }
+  }
+
+  return { clientes, loading, cargar, crear, actualizar, eliminar }
 }
