@@ -190,7 +190,7 @@ export default function LinkPublico() {
   )
 
   return (
-    <div className="min-h-screen pb-8" style={{ background: '#0D0D14' }}>
+    <div className="min-h-screen pb-32" style={{ background: '#0D0D14' }}>
 
       {/* header profesional */}
       <div className="px-5 pt-10 pb-6">
@@ -339,17 +339,15 @@ export default function LinkPublico() {
           <>
             {/* cartel de seña */}
             {p.senia_activa && p.senia_porcentaje > 0 && (
-              <div className="rounded-2xl p-4" style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.25)' }}>
-                <p className="text-yellow-400 font-bold text-[14px] mb-1">💰 Seña para confirmar el trabajo</p>
-                <p className="text-white font-bold text-[26px]">
-                  {fmt(Math.round(p.total * p.senia_porcentaje / 100))}
-                  <span className="text-gray-500 font-normal text-[13px] ml-2">({p.senia_porcentaje}% del total)</span>
-                </p>
-                {prof?.telefono && (
-                  <p className="text-gray-400 text-[12px] mt-2">
-                    Coordiná el pago con <strong className="text-white">{prof.nombre}</strong> antes de confirmar.
+              <div className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.25)' }}>
+                <span className="text-2xl">💰</span>
+                <div>
+                  <p className="text-yellow-400 font-bold text-[13px]">Seña para confirmar el trabajo</p>
+                  <p className="text-white font-bold text-[18px] leading-tight">
+                    {fmt(Math.round(p.total * p.senia_porcentaje / 100))}
+                    <span className="text-gray-500 font-normal text-[12px] ml-2">({p.senia_porcentaje}%)</span>
                   </p>
-                )}
+                </div>
               </div>
             )}
 
