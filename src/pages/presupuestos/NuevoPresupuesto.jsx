@@ -133,7 +133,14 @@ export default function NuevoPresupuesto() {
   const totalMat = items.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
   const totalMO  = items.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
 
-  function addSeccion() { setItems(prev => [...prev, { ...SECCION_VACIA }]) }
+  function addSeccion() {
+    setItems(prev => {
+      // si no hay ninguna sección todavía, insertar antes del primer ítem
+      const yaHaySeccion = prev.some(i => i.tipo === 'seccion')
+      if (!yaHaySeccion) return [{ ...SECCION_VACIA }, ...prev]
+      return [...prev, { ...SECCION_VACIA }]
+    })
+  }
   const total    = totalMat + totalMO
   const margen   = total - totalMat
 
