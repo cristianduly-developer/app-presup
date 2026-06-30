@@ -227,17 +227,18 @@ export default function DetallePresupuesto() {
 
             {/* total al pie del card */}
             <div className="mt-3 pt-3 flex flex-col gap-1.5" style={{ borderTop: '1px solid #1E1E2E' }}>
-              {totalMat > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-[12px]">Materiales</span>
-                  <span className="text-[12px] font-medium" style={{ color: '#3B82F6' }}>{fmt(totalMat)}</span>
-                </div>
-              )}
-              {totalMO > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-[12px]">Mano de obra</span>
-                  <span className="text-[12px] font-medium" style={{ color: '#F97316' }}>{fmt(totalMO)}</span>
-                </div>
+              {/* subtotales solo cuando hay AMBOS tipos */}
+              {totalMat > 0 && totalMO > 0 && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-[12px]">Materiales</span>
+                    <span className="text-[12px] font-medium" style={{ color: '#3B82F6' }}>{fmt(totalMat)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-[12px]">Mano de obra</span>
+                    <span className="text-[12px] font-medium" style={{ color: '#F97316' }}>{fmt(totalMO)}</span>
+                  </div>
+                </>
               )}
               <div className="flex justify-between items-center mt-1">
                 <span className="text-white font-bold text-[15px]">Total</span>
