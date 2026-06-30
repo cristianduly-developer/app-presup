@@ -170,7 +170,7 @@ export default function NuevoPresupuesto() {
         const { data } = await crearCliente(clienteNuevo)
         cId = data?.id
       }
-      const filtrados = items.map(i => ({ ...i, descripcion: i.descripcion.trim() || (i.tipo === 'mano_obra' ? 'Mano de obra' : i.tipo === 'seccion' ? 'Etapa' : 'Material') })).filter(i => i.precio_unit > 0 || i.tipo === 'seccion')
+      const filtrados = items.filter(i => i.tipo === 'seccion' || i.precio_unit > 0 || i.descripcion.trim()).map(i => ({ ...i, descripcion: i.descripcion.trim() || (i.tipo === 'mano_obra' ? 'Mano de obra' : i.tipo === 'seccion' ? 'Etapa' : 'Material') }))
       const totalMat2 = filtrados.filter(i => i.tipo === 'material').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
       const totalMO2  = filtrados.filter(i => i.tipo === 'mano_obra').reduce((s, i) => s + i.cantidad * i.precio_unit, 0)
       // secciones no aportan al total
@@ -225,7 +225,7 @@ export default function NuevoPresupuesto() {
     }
     const { data, error } = await crear(
       { titulo, cliente_id: cId || null, vigencia_dias: vigencia, notas_internas: notas, status },
-      items.map(i => ({ ...i, descripcion: i.descripcion.trim() || (i.tipo === 'mano_obra' ? 'Mano de obra' : i.tipo === 'seccion' ? 'Etapa' : 'Material') })).filter(i => i.precio_unit > 0 || i.tipo === 'seccion')
+      items.filter(i => i.tipo === 'seccion' || i.precio_unit > 0 || i.descripcion.trim()).map(i => ({ ...i, descripcion: i.descripcion.trim() || (i.tipo === 'mano_obra' ? 'Mano de obra' : i.tipo === 'seccion' ? 'Etapa' : 'Material') }))
     )
     setGuardando(false)
     if (!error && data) navigate(`/presupuestos/${data.id}`)
@@ -604,9 +604,9 @@ export default function NuevoPresupuesto() {
 
           <div className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
             <p className="text-gray-500 text-[11px] font-semibold tracking-wider mb-1">
-              ÍTEMS ({items.filter(i => i.descripcion && i.tipo !== 'seccion').length})
+              ÍTEMS ({items.filter(i => i.tipo !== 'seccion' && (i.precio_unit > 0 || i.descripcion.trim())).length})
             </p>
-            {items.filter(i => i.descripcion).map((it, i) => it.tipo === 'seccion' ? (
+            {items.filter(i => i.tipo === 'seccion' || i.precio_unit > 0 || i.descripcion.trim()).map((it, i) => it.tipo === 'seccion' ? (
               <div key={i} className="flex items-center gap-2 my-1">
                 <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#A855F7', background: 'rgba(168,85,247,.1)' }}>
