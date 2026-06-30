@@ -94,7 +94,7 @@ export default function App() {
   const estadoSus     = suscripcion?.estado || null
   const diasRestantes = suscripcion?.dias_restantes ?? null
   const planRaw       = suscripcion?.plan || 'basico'
-  const plan          = (planRaw === 'sincargo' || planRaw === 'demo') ? 'profesional' : planRaw
+  const plan          = (planRaw === 'sincargo' || planRaw === 'demo' || planRaw === 'trial') ? 'profesional' : planRaw
 
   const nombreUsuario = user?.user_metadata?.full_name?.split(' ')[0]
     || user?.email?.split('@')[0]
