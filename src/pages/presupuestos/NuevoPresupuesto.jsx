@@ -604,9 +604,17 @@ export default function NuevoPresupuesto() {
 
           <div className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
             <p className="text-gray-500 text-[11px] font-semibold tracking-wider mb-1">
-              ÍTEMS ({items.filter(i => i.descripcion).length})
+              ÍTEMS ({items.filter(i => i.descripcion && i.tipo !== 'seccion').length})
             </p>
-            {items.filter(i => i.descripcion).map((it, i) => (
+            {items.filter(i => i.descripcion).map((it, i) => it.tipo === 'seccion' ? (
+              <div key={i} className="flex items-center gap-2 my-1">
+                <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: '#A855F7', background: 'rgba(168,85,247,.1)' }}>
+                  📌 {it.descripcion}
+                </span>
+                <div className="flex-1 h-px" style={{ background: '#2A2A3A' }} />
+              </div>
+            ) : (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span>{it.tipo === 'material' ? '🔧' : '👷'}</span>
