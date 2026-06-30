@@ -1,7 +1,5 @@
--- RPC unificado: crea presupuesto + items en una sola transacción atómica.
--- Verifica el límite de plan antes de insertar.
-drop function if exists crear_presupuesto(uuid,uuid,integer,text,text,numeric,numeric,numeric,numeric,date,jsonb);
-drop function if exists crear_presupuesto(uuid,text,uuid,integer,text,text,numeric,numeric,numeric,numeric,date,jsonb);
+-- Fix crítico: perfiles usa id, no user_id
+-- El bug causaba que v_plan siempre fuera null → límite de 5 presupuestos para todos
 
 create or replace function crear_presupuesto(
   p_user_id          uuid,
@@ -20,6 +18,7 @@ create or replace function crear_presupuesto(
 returns jsonb
 language plpgsql
 security definer
+set search_path = public, pg_catalog
 as $$
 declare
   v_count     integer;
@@ -30,16 +29,16 @@ declare
   v_token     text;
   v_item      jsonb;
 begin
-  -- Límite de plan
+  -- Límite de plan (fix: id, no user_id)
   select plan into v_plan
   from perfiles where id = p_user_id;
 
   v_limite := case v_plan
-    when 'basico'      then 10
+    when 'basico'      then 50
     when 'demo'        then 999
-    when 'profesional' then 999
-    when 'premium'     then 999
-    else 5
+    when 'profesional' then 200
+    when 'premium'     then 999999
+    else 50
   end;
 
   select count(*) into v_count
