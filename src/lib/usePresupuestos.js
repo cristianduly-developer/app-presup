@@ -5,6 +5,7 @@ import { showToast } from './toast'
 const TTL = 60_000
 let _cache = null
 let _cacheTs = 0
+let _cacheUid = null
 
 export function usePresupuestos() {
   const [presupuestos, setPresupuestos] = useState(_cache || [])
@@ -13,12 +14,17 @@ export function usePresupuestos() {
   useEffect(() => { cargar() }, [])
 
   async function cargar(force = false) {
-    if (!force && _cache && Date.now() - _cacheTs < TTL) {
+    const { data: { user: u } } = await supabase.auth.getUser()
+    const uid = u?.id
+    // invalidar cache si cambió el usuario
+    if (_cacheUid && _cacheUid !== uid) { _cache = null; _cacheTs = 0 }
+    if (!force && _cache && Date.now() - _cacheTs < TTL && _cacheUid === uid) {
       setPresupuestos(_cache)
       setLoading(false)
       return
     }
     setLoading(true)
+    _cacheUid = uid
     const { data } = await supabase
       .from('presupuestos')
       .select(`id, numero, titulo, status, total, fecha_vence, fecha_envio, created_at, token_publico, vigencia_dias, cliente_id, clientes(nombre, telefono), pagos(monto)`)
@@ -121,13 +127,14 @@ export function usePresupuestoPublico(token) {
   async function aceptar(firma = {}) {
     const { data: result } = await supabase.rpc('aceptar_presupuesto', { p_token: token })
     if (result?.ok && firma.firma_imagen) {
-      await supabase.from('presupuestos')
+      const { error: firmaErr } = await supabase.from('presupuestos')
         .update({
           firma_imagen: firma.firma_imagen,
           firma_nombre: firma.firma_nombre || '',
           firma_fecha:  new Date().toISOString(),
         })
         .eq('token_publico', token)
+      if (firmaErr) console.error('[aceptar] firma no guardada:', firmaErr.message)
     }
     return result
   }

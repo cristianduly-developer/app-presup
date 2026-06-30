@@ -107,6 +107,7 @@ export default function NuevoPresupuesto() {
   // cargar plantilla si viene por URL
   useEffect(() => {
     if (!plantillaId) return
+    if (!tieneFeature(plan, 'plantillas')) return  // guard de plan
     async function cargarPlantilla() {
       const { data } = await supabase
         .from('plantillas')
@@ -159,6 +160,8 @@ export default function NuevoPresupuesto() {
 
   async function guardar(status = 'borrador') {
     setGuardando(true)
+
+    try {
 
     if (editarId) {
       // modo edición: UPDATE del presupuesto existente
@@ -227,6 +230,12 @@ export default function NuevoPresupuesto() {
     setGuardando(false)
     if (!error && data) navigate(`/presupuestos/${data.id}`)
     else if (error) setLimiteError('No se pudo guardar el presupuesto. Verificá tu conexión e intentá de nuevo.')
+
+    } catch (e) {
+      console.error('[guardar]', e)
+      setGuardando(false)
+      setLimiteError('Ocurrió un error inesperado. Intentá de nuevo.')
+    }
   }
 
   return (

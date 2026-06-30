@@ -77,7 +77,7 @@ export default function DetallePresupuesto() {
   }
 
   async function registrarPago() {
-    if (!montoPago || isNaN(montoPago)) return
+    if (!montoPago || isNaN(montoPago) || Number(montoPago) <= 0) return
     setGuardandoPago(true)
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('pagos').insert({
@@ -397,11 +397,13 @@ export default function DetallePresupuesto() {
             <Play size={13} /> Marcar iniciada
           </button>
         )}
-        <button onClick={abrirPDF}
-          className="flex-1 py-3.5 rounded-2xl text-[12px] font-semibold text-white flex items-center justify-center gap-2"
-          style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
-          <Download size={13} /> PDF
-        </button>
+        {tieneFeature(plan, 'pdf') && (
+          <button onClick={abrirPDF}
+            className="flex-1 py-3.5 rounded-2xl text-[12px] font-semibold text-white flex items-center justify-center gap-2"
+            style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            <Download size={13} /> PDF
+          </button>
+        )}
         <button onClick={enviarWhatsApp}
           className="flex-[1.5] py-3.5 rounded-2xl text-[12px] font-bold text-white flex items-center justify-center gap-2"
           style={{ background: '#22C55E' }}>
