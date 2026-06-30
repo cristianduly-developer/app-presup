@@ -67,13 +67,18 @@ export default function NuevoPresupuesto() {
     setSugerencias([])
     if (pl.nombre && !titulo) setTitulo(pl.nombre)
     if (pl.plantilla_items?.length) {
-      setItems(pl.plantilla_items.map(it => ({
-        tipo:        it.tipo || 'material',
-        descripcion: it.descripcion || '',
-        unidad:      it.tipo === 'mano_obra' ? 'global' : 'u',
-        cantidad:    1,
-        precio_unit: it.precio || 0,
-      })))
+      setItems(pl.plantilla_items.map(it => {
+        const esMO = it.tipo === 'mano_obra'
+        const cant = it.cantidad || 1
+        const precio = it.precio || 0
+        return {
+          tipo:        it.tipo || 'material',
+          descripcion: it.descripcion || '',
+          unidad:      esMO ? 'global' : (it.unidad || 'u'),
+          cantidad:    esMO ? 1 : cant,
+          precio_unit: esMO ? cant * precio : precio,
+        }
+      }))
     }
     supabase.from('plantillas').update({ usos: (pl.usos || 0) + 1 }).eq('id', pl.id)
   }
@@ -117,13 +122,18 @@ export default function NuevoPresupuesto() {
       if (!data) return
       setPlantillaNombre(data.nombre)
       if (data.plantilla_items?.length) {
-        setItems(data.plantilla_items.map(it => ({
-          tipo:        it.tipo || 'material',
-          descripcion: it.descripcion || '',
-          unidad:      it.tipo === 'material' ? 'u' : 'global',
-          cantidad:    1,
-          precio_unit: it.precio || 0,
-        })))
+        setItems(data.plantilla_items.map(it => {
+          const esMO = it.tipo === 'mano_obra'
+          const cant = it.cantidad || 1
+          const precio = it.precio || 0
+          return {
+            tipo:        it.tipo || 'material',
+            descripcion: it.descripcion || '',
+            unidad:      esMO ? 'global' : (it.unidad || 'u'),
+            cantidad:    esMO ? 1 : cant,
+            precio_unit: esMO ? cant * precio : precio,
+          }
+        }))
       }
       // incrementar usos
       await supabase.from('plantillas').update({ usos: data.usos + 1 }).eq('id', plantillaId)
