@@ -74,8 +74,35 @@ export default function LinkPublico() {
     const canvas = canvasRef.current
     const firmaBase64 = canvas.toDataURL('image/png')
     const result = await aceptar({ firma_imagen: firmaBase64, firma_nombre: nombreFirma })
-    if (result?.ok) setAceptado(true)
-    else setErrAceptar(result?.error || 'Error al aceptar. Intentá de nuevo.')
+    if (result?.ok) {
+      setAceptado(true)
+      // mails de confirmación — fire & forget
+      fetch('/api/mail-aprobado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          presupuesto: {
+            numero: p.numero,
+            titulo: p.titulo,
+            total: p.total,
+            fecha_vence: p.fecha_vence,
+            items: p.items || [],
+          },
+          cliente: {
+            nombre: p.cliente_nombre || '',
+            email: p.cliente_email || '',
+            telefono: p.cliente_telefono || '',
+          },
+          profesional: {
+            nombre: p.prof_nombre || '',
+            email: p.prof_email || '',
+            telefono: p.prof_telefono || '',
+          },
+        }),
+      }).catch(() => {})
+    } else {
+      setErrAceptar(result?.error || 'Error al aceptar. Intentá de nuevo.')
+    }
     setAceptando(false)
   }
 
