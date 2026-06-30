@@ -96,77 +96,59 @@ export default function PdfPresupuesto() {
         {/* banda superior */}
         <div style={{ background:VERDE, height:5 }} />
 
-        <div style={{ padding:'24px 36px 32px' }}>
+        <div style={{ padding:'18px 32px 28px' }}>
 
-          {/* ─── ENCABEZADO: profesional izq, presupuesto der ─── */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18, paddingBottom:16, borderBottom:`1px solid ${LINEA}` }}>
+          {/* ─── ENCABEZADO compacto ─── */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, paddingBottom:10, borderBottom:`1px solid ${LINEA}` }}>
 
-            {/* profesional */}
-            <div style={{ display:'flex', alignItems:'flex-start', gap:14 }}>
+            {/* profesional — una sola fila */}
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               {perfil?.logo_url
-                ? <img src={perfil.logo_url} alt="Logo" style={{ width:52, height:52, objectFit:'contain', borderRadius:8, border:`1px solid ${LINEA}` }} />
-                : <div style={{ width:52, height:52, background:VERDE, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, color:'#fff', fontWeight:800, flexShrink:0 }}>
+                ? <img src={perfil.logo_url} alt="Logo" style={{ width:36, height:36, objectFit:'contain', borderRadius:6, border:`1px solid ${LINEA}` }} />
+                : <div style={{ width:36, height:36, background:VERDE, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, color:'#fff', fontWeight:800, flexShrink:0 }}>
                     {inicialProf}
                   </div>
               }
               <div>
-                <div style={{ fontSize:16, fontWeight:800, color:NEGRO, marginBottom:1 }}>{perfil?.nombre || 'Profesional'}</div>
-                {perfil?.oficio && <div style={{ fontSize:10, color:ACENTO, fontWeight:700, textTransform:'uppercase', letterSpacing:0.8, marginBottom:4 }}>
-                  {perfil.oficio.charAt(0).toUpperCase() + perfil.oficio.slice(1)}
-                </div>}
-                <div style={{ fontSize:10, color:GRIS, lineHeight:1.7 }}>
-                  {profUbicacion  && <div>{profUbicacion}</div>}
-                  {perfil?.telefono && <div>{perfil.telefono}</div>}
-                  {perfil?.cuit    && <div>CUIT {perfil.cuit}</div>}
-                  {perfil?.condicion_iva && <div>{perfil.condicion_iva.charAt(0).toUpperCase() + perfil.condicion_iva.slice(1)}</div>}
-                  {perfil?.matricula && <div>Mat. {perfil.matricula}</div>}
+                <div style={{ fontSize:14, fontWeight:800, color:NEGRO }}>{perfil?.nombre || 'Profesional'}</div>
+                <div style={{ fontSize:10, color:GRIS }}>
+                  {[perfil?.oficio, perfil?.telefono, perfil?.cuit && `CUIT ${perfil.cuit}`, perfil?.condicion_iva].filter(Boolean).join(' · ')}
                 </div>
               </div>
             </div>
 
-            {/* número + fechas */}
-            <div style={{ textAlign:'right', minWidth:160 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2.5, textTransform:'uppercase', marginBottom:1 }}>Presupuesto</div>
-              <div style={{ fontSize:38, fontWeight:900, color:VERDE, lineHeight:1, marginBottom:6, letterSpacing:-1 }}>#{p.numero}</div>
-              <div style={{ fontSize:11, color:GRIS, lineHeight:1.8 }}>
-                <div>Fecha: <strong style={{ color:NEGRO }}>{fmtFecha(p.created_at)}</strong></div>
-                <div>Validez: <strong style={{ color:NEGRO }}>{p.vigencia_dias} días</strong></div>
-                {p.fecha_vence && <div>Vence: <strong style={{ color:NEGRO }}>{fmtFecha(p.fecha_vence)}</strong></div>}
+            {/* número + meta en columna derecha compacta */}
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase' }}>Presupuesto</div>
+              <div style={{ fontSize:30, fontWeight:900, color:VERDE, lineHeight:1.1, letterSpacing:-0.5 }}>#{p.numero}</div>
+              <div style={{ fontSize:10, color:GRIS, marginTop:2 }}>
+                {fmtFecha(p.created_at)} · {p.vigencia_dias}d
+                {p.fecha_vence && ` · vence ${fmtFecha(p.fecha_vence)}`}
               </div>
-              <div style={{ marginTop:8, display:'inline-block', padding:'3px 12px', borderRadius:20, fontSize:10, fontWeight:700, background:statusColor+'18', color:statusColor, border:`1px solid ${statusColor}33` }}>
+              <span style={{ display:'inline-block', marginTop:3, padding:'2px 10px', borderRadius:20, fontSize:9, fontWeight:700, background:statusColor+'18', color:statusColor }}>
                 {statusLabel}
-              </div>
+              </span>
             </div>
           </div>
 
-          {/* ─── CLIENTE ─── */}
-          {p.clientes && (
-            <div style={{ marginBottom:16 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:6 }}>Cliente</div>
-              <div style={{ background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:8, padding:'10px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                <div style={{ width:34, height:34, borderRadius:'50%', background:VERDE, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:800, color:'#fff', flexShrink:0 }}>
-                  {inicialCli}
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:800, fontSize:14, color:NEGRO, marginBottom:2 }}>{p.clientes.nombre}</div>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:'2px 20px', fontSize:11, color:GRIS }}>
-                    {p.clientes.telefono  && <span>☎ {p.clientes.telefono}</span>}
-                    {p.clientes.email     && <span>✉ {p.clientes.email}</span>}
-                    {p.clientes.direccion && <span>📍 {p.clientes.direccion}</span>}
-                    {p.clientes.cuit      && <span>CUIT {p.clientes.cuit}</span>}
-                  </div>
+          {/* ─── CLIENTE + TRABAJO en una sola fila ─── */}
+          <div style={{ display:'flex', gap:12, marginBottom:14 }}>
+            {p.clientes && (
+              <div style={{ flex:1, background:VERDE2, border:`1px solid ${LINEA}`, borderRadius:8, padding:'8px 14px' }}>
+                <div style={{ fontSize:8, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:3 }}>Cliente</div>
+                <div style={{ fontWeight:800, fontSize:13, color:NEGRO }}>{p.clientes.nombre}</div>
+                <div style={{ fontSize:10, color:GRIS, marginTop:1 }}>
+                  {[p.clientes.telefono, p.clientes.email, p.clientes.direccion].filter(Boolean).join(' · ')}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* ─── TÍTULO DEL TRABAJO ─── */}
-          {p.titulo && (
-            <div style={{ marginBottom:16, padding:'9px 16px', background:'#fff', border:`1px solid ${LINEA}`, borderLeft:`4px solid ${VERDE}`, borderRadius:6 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:2 }}>Trabajo</div>
-              <div style={{ fontSize:15, fontWeight:800, color:NEGRO }}>{p.titulo}</div>
-            </div>
-          )}
+            )}
+            {p.titulo && (
+              <div style={{ flex:1, background:'#fff', border:`1px solid ${LINEA}`, borderLeft:`4px solid ${VERDE}`, borderRadius:6, padding:'8px 14px' }}>
+                <div style={{ fontSize:8, fontWeight:700, color:ACENTO, letterSpacing:2, textTransform:'uppercase', marginBottom:3 }}>Trabajo</div>
+                <div style={{ fontSize:14, fontWeight:800, color:NEGRO }}>{p.titulo}</div>
+              </div>
+            )}
+          </div>
 
           {/* ─── TABLA ITEMS ─── */}
           <div style={{ marginBottom:16 }}>
