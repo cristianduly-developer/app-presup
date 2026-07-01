@@ -181,6 +181,8 @@ function VistaLista({ lista, navigate, setColorPicker }) {
         const st    = STATUS_MAP[o.status] || STATUS_MAP.presupuestada
         const acent = o.color || st.color
         const pct   = o.total > 0 ? Math.round(((o.cobrado || 0) / o.total) * 100) : 0
+        const titulo = o.presupuesto_titulo || o.nombre
+        const cliente = o.cliente_nombre
         return (
           <button key={o.id} onClick={() => navigate(`/obras/${o.id}`)}
             className="text-left w-full rounded-2xl p-4 active:opacity-70"
@@ -194,7 +196,11 @@ function VistaLista({ lista, navigate, setColorPicker }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-white font-semibold text-[13px] leading-tight flex-1 truncate">{o.nombre}</p>
+                  <div className="flex-1 min-w-0">
+                    {cliente && <p className="text-gray-400 text-[11px] truncate">{cliente}</p>}
+                    <p className="text-white font-semibold text-[14px] leading-tight truncate">{titulo}</p>
+                    {o.presupuesto_numero && <p className="text-gray-600 text-[10px]">Pres. #{o.presupuesto_numero}</p>}
+                  </div>
                   <ColorDot obra={o} setColorPicker={setColorPicker} />
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -204,10 +210,10 @@ function VistaLista({ lista, navigate, setColorPicker }) {
               </div>
             </div>
             <div className="grid grid-cols-4 gap-1 pt-3" style={{ borderTop: '1px solid #1E1E2E' }}>
-              <StatCol label="Total"    value={fmt(o.total)}         color="#fff" />
-              <StatCol label="Cobrado"  value={fmt(o.cobrado)}       color="#22C55E" />
-              <StatCol label="Pendiente" value={fmt(o.pendiente)}    color="#F97316" />
-              <StatCol label="Ganancia" value={fmt(o.ganancia_neta)} color="#A855F7" />
+              <StatCol label="Total"     value={fmt(o.total)}         color="#fff" />
+              <StatCol label="Cobrado"   value={fmt(o.cobrado)}       color="#22C55E" />
+              <StatCol label="Pendiente" value={fmt(o.pendiente)}     color="#F97316" />
+              <StatCol label="Ganancia"  value={fmt(o.ganancia_neta)} color="#A855F7" />
             </div>
           </button>
         )
@@ -235,14 +241,18 @@ function VistaTablero({ obras, navigate, setColorPicker }) {
                 <p className="text-gray-700 text-[11px] text-center py-4">Sin obras</p>
               )}
               {items.map(o => {
-                const acent = o.color || col.color
-                const pct   = o.total > 0 ? Math.round(((o.cobrado || 0) / o.total) * 100) : 0
+                const acent  = o.color || col.color
+                const pct    = o.total > 0 ? Math.round(((o.cobrado || 0) / o.total) * 100) : 0
+                const titulo = o.presupuesto_titulo || o.nombre
                 return (
                   <button key={o.id} onClick={() => navigate(`/obras/${o.id}`)}
                     className="w-full text-left rounded-xl p-3 active:opacity-70"
                     style={{ background: '#0D0D14', border: `1px solid #1E1E2E`, borderLeft: `3px solid ${acent}` }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-white text-[12px] font-semibold leading-tight flex-1 truncate">{o.nombre}</p>
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        {o.cliente_nombre && <p className="text-gray-500 text-[10px] truncate">{o.cliente_nombre}</p>}
+                        <p className="text-white text-[12px] font-semibold leading-tight truncate">{titulo}</p>
+                      </div>
                       <ColorDot obra={o} setColorPicker={setColorPicker} />
                     </div>
                     <div className="flex items-center justify-between">
@@ -264,15 +274,19 @@ function VistaCompacta({ lista, navigate, setColorPicker }) {
   return (
     <div className="flex flex-col gap-1.5 px-4">
       {lista.map(o => {
-        const st    = STATUS_MAP[o.status] || STATUS_MAP.presupuestada
-        const acent = o.color || st.color
-        const pct   = o.total > 0 ? Math.round(((o.cobrado || 0) / o.total) * 100) : 0
+        const st     = STATUS_MAP[o.status] || STATUS_MAP.presupuestada
+        const acent  = o.color || st.color
+        const pct    = o.total > 0 ? Math.round(((o.cobrado || 0) / o.total) * 100) : 0
+        const titulo = o.presupuesto_titulo || o.nombre
         return (
           <button key={o.id} onClick={() => navigate(`/obras/${o.id}`)}
             className="w-full text-left flex items-center gap-3 rounded-2xl px-4 py-3 active:opacity-70"
             style={{ background: '#161622', border: '1px solid #1E1E2E', borderLeft: `3px solid ${acent}` }}>
             <ColorDot obra={o} setColorPicker={setColorPicker} />
-            <p className="text-white text-[13px] font-semibold flex-1 truncate">{o.nombre}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-[13px] font-semibold truncate">{titulo}</p>
+              {o.cliente_nombre && <p className="text-gray-500 text-[10px] truncate">{o.cliente_nombre}</p>}
+            </div>
             <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ background: st.bg, color: st.color }}>{st.label}</span>
             <div className="text-right shrink-0">
               <p className="text-white text-[12px] font-bold">{fmt(o.total)}</p>
