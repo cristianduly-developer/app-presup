@@ -189,8 +189,6 @@ export default function Presupuestos() {
                     <Accion label="WhatsApp" bg="rgba(34,197,94,.12)" color="#22C55E"
                       href={waMe(p.clientes.telefono)} />
                   )}
-                  <Accion label="Duplicar"  bg="rgba(59,130,246,.12)" color="#3B82F6"
-                    onClick={e => duplicar(e, p)} />
                   <Accion label="Editar"    bg="rgba(107,114,128,.12)" color="#9CA3AF"
                     onClick={e => { e.stopPropagation(); navigate(`/presupuestos/nuevo?editar=${p.id}`) }} />
                   <Accion label="Ver"       bg="rgba(168,85,247,.12)" color="#A855F7"
