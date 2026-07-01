@@ -105,7 +105,7 @@ export default function LinkPublico() {
             vigencia_dias:    p.vigencia_dias,
             senia_activa:     p.senia_activa,
             senia_porcentaje: p.senia_porcentaje,
-            firma_imagen:     firmaUrl,   // solo URL, no base64 (emails bloquean base64)
+            firma_imagen:     firmaUrl || firmaBase64,  // URL pública si subió al storage, si no base64
             firma_nombre:     nombreFirma || p.cliente_nombre,
             items:            p.items || [],
           },

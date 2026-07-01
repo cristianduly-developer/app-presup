@@ -1,6 +1,30 @@
-const MAIL_FROM  = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
-const APP_URL    = 'https://presupuestos.solucionesmdp.com.ar'
-const WA_SOPORTE = '5492235767784'
+const MAIL_FROM      = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
+const APP_URL        = 'https://presupuestos.solucionesmdp.com.ar'
+const WA_SOPORTE     = '5492235767784'
+const SUPABASE_URL   = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+const SUPABASE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+
+async function subirFirmaStorage(base64, presupuestoId) {
+  if (!base64?.startsWith('data:image')) return null
+  try {
+    const matches = base64.match(/^data:(.+);base64,(.+)$/)
+    if (!matches) return null
+    const [, mime, data] = matches
+    const buf = Buffer.from(data, 'base64')
+    const path = `firmas/${presupuestoId}_${Date.now()}.png`
+    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/firmas/${path}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': mime,
+        'x-upsert': 'true',
+      },
+      body: buf,
+    })
+    if (!uploadRes.ok) return null
+    return `${SUPABASE_URL}/storage/v1/object/public/firmas/${path}`
+  } catch { return null }
+}
 
 function fmt(n) {
   return '$' + Number(n || 0).toLocaleString('es-AR')
@@ -155,7 +179,14 @@ export default async function handler(req, res) {
   if (!presupuesto || !cliente || !profesional)
     return res.status(400).json({ ok: false, error: 'datos_incompletos' })
 
-  const { numero, titulo, firma_imagen, firma_nombre } = presupuesto
+  const { numero, titulo, firma_nombre } = presupuesto
+  // si firma_imagen es base64, subirla al storage y usar URL pública
+  let firma_imagen = presupuesto.firma_imagen
+  if (firma_imagen?.startsWith('data:image')) {
+    const url = await subirFirmaStorage(firma_imagen, numero)
+    if (url) firma_imagen = url
+    // si falla el upload, firma_imagen queda como base64 (algunos clientes la mostrarán igual)
+  }
 
   // ── Mail al PROFESIONAL ──────────────────────────────────────────────
   const htmlProf = layout(
