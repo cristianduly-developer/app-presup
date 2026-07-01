@@ -32,6 +32,9 @@ export default function DetalleObra() {
   const [formObra, setFormObra] = useState({})
   const [guardandoObra, setGuardandoObra] = useState(false)
 
+  // confirmación finalizar con deuda
+  const [confirmFinalizar, setConfirmFinalizar] = useState(false)
+
   useEffect(() => { cargar() }, [id])
 
   async function cargar() {
@@ -319,15 +322,61 @@ export default function DetalleObra() {
         </div>
       )}
 
-      {/* botón cambiar estado */}
+      {/* botones fijos al fondo */}
       {STATUS_NEXT[obra.status] && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-4 pb-2"
           style={{ background: 'linear-gradient(to top, #0D0D14 70%, transparent)' }}>
-          <button onClick={() => cambiarStatus(STATUS_NEXT[obra.status].next)}
-            className="w-full py-4 rounded-2xl text-white font-bold text-[15px]"
-            style={{ background: '#3B82F6' }}>
-            {STATUS_NEXT[obra.status].label}
-          </button>
+          <div className="flex gap-2">
+            {/* botón Cobrar — siempre visible si hay pendiente */}
+            {(obra.status === 'en_ejecucion' || obra.status === 'pendiente_cobro') && cobrado < obra.total && (
+              <button onClick={() => { setModal('pago'); setForm({}) }}
+                className="flex-1 py-4 rounded-2xl text-white font-bold text-[15px] flex items-center justify-center gap-2"
+                style={{ background: '#22C55E' }}>
+                💰 Cobrar
+              </button>
+            )}
+            {/* botón principal de estado */}
+            <button
+              onClick={() => {
+                if (obra.status === 'en_ejecucion') {
+                  // si hay pendiente de cobro, preguntar
+                  if (cobrado < obra.total) { setConfirmFinalizar(true); return }
+                }
+                cambiarStatus(STATUS_NEXT[obra.status].next)
+              }}
+              className="flex-1 py-4 rounded-2xl text-white font-bold text-[15px]"
+              style={{ background: '#3B82F6' }}>
+              {STATUS_NEXT[obra.status].label}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* modal confirmar finalizar con deuda */}
+      {confirmFinalizar && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,.7)' }}>
+          <div className="w-full max-w-[340px] rounded-3xl p-6" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl"
+              style={{ background: 'rgba(249,115,22,.12)' }}>⚠️</div>
+            <p className="text-white font-bold text-[16px] text-center mb-2">Obra sin cobrar completamente</p>
+            <p className="text-gray-400 text-[13px] text-center mb-1">
+              Todavía quedán <span className="text-orange-400 font-bold">{fmt(obra.total - cobrado)}</span> pendientes de cobro.
+            </p>
+            <p className="text-gray-500 text-[12px] text-center mb-6">¿Querés finalizarla igual?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmFinalizar(false)}
+                className="flex-1 py-3.5 rounded-2xl text-gray-400 font-semibold text-[14px]"
+                style={{ background: '#0D0D14', border: '1px solid #2A2A3A' }}>
+                Cancelar
+              </button>
+              <button onClick={() => { setConfirmFinalizar(false); cambiarStatus('pendiente_cobro') }}
+                className="flex-1 py-3.5 rounded-2xl text-white font-bold text-[14px]"
+                style={{ background: '#F97316' }}>
+                Finalizar igual
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
