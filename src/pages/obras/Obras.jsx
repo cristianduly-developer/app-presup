@@ -186,7 +186,11 @@ function VistaLista({ lista, navigate, setColorPicker }) {
         return (
           <button key={o.id} onClick={() => navigate(`/obras/${o.id}`)}
             className="text-left w-full rounded-2xl p-4 active:opacity-70"
-            style={{ background: '#161622', border: '1px solid #1E1E2E', borderLeft: `4px solid ${acent}` }}>
+            style={{
+              background: o.color ? `${o.color}20` : '#161622',
+              border: `1px solid ${o.color ? o.color + '55' : '#1E1E2E'}`,
+              borderLeft: `4px solid ${acent}`,
+            }}>
             <div className="flex items-start gap-3 mb-3">
               <div className="relative shrink-0">
                 <CircleProgress pct={pct} size={54} stroke={4} color={acent} />
@@ -247,7 +251,11 @@ function VistaTablero({ obras, navigate, setColorPicker }) {
                 return (
                   <button key={o.id} onClick={() => navigate(`/obras/${o.id}`)}
                     className="w-full text-left rounded-xl p-3 active:opacity-70"
-                    style={{ background: '#0D0D14', border: `1px solid #1E1E2E`, borderLeft: `3px solid ${acent}` }}>
+                    style={{
+                      background: o.color ? `${o.color}20` : '#0D0D14',
+                      border: `1px solid ${o.color ? o.color + '55' : '#1E1E2E'}`,
+                      borderLeft: `3px solid ${acent}`,
+                    }}>
                     <div className="flex items-start gap-2 mb-2">
                       <div className="flex-1 min-w-0">
                         {o.cliente_nombre && <p className="text-gray-500 text-[10px] truncate">{o.cliente_nombre}</p>}
@@ -281,7 +289,11 @@ function VistaCompacta({ lista, navigate, setColorPicker }) {
         return (
           <button key={o.id} onClick={() => navigate(`/obras/${o.id}`)}
             className="w-full text-left flex items-center gap-3 rounded-2xl px-4 py-3 active:opacity-70"
-            style={{ background: '#161622', border: '1px solid #1E1E2E', borderLeft: `3px solid ${acent}` }}>
+            style={{
+              background: o.color ? `${o.color}20` : '#161622',
+              border: `1px solid ${o.color ? o.color + '55' : '#1E1E2E'}`,
+              borderLeft: `3px solid ${acent}`,
+            }}>
             <ColorDot obra={o} setColorPicker={setColorPicker} />
             <div className="flex-1 min-w-0">
               <p className="text-white text-[13px] font-semibold truncate">{titulo}</p>
