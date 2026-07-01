@@ -197,12 +197,12 @@ export default function PdfPresupuesto() {
             {/* totales */}
             <div style={{ display:'flex', justifyContent:'flex-end', marginTop:14 }}>
               <div style={{ minWidth:280 }}>
-                {totalMat > 0 && (
+                {items.filter(i => i.tipo === 'material').length > 1 && totalMat > 0 && (
                   <div style={{ display:'flex', justifyContent:'space-between', padding:'5px 0', fontSize:12, color:GRIS, borderBottom:`1px solid ${LINEA}` }}>
                     <span>Subtotal materiales</span><span>{fmt(totalMat)}</span>
                   </div>
                 )}
-                {totalMO > 0 && (
+                {items.filter(i => i.tipo === 'mano_obra').length > 1 && totalMO > 0 && (
                   <div style={{ display:'flex', justifyContent:'space-between', padding:'5px 0', fontSize:12, color:GRIS, borderBottom:`1px solid ${LINEA}` }}>
                     <span>Subtotal mano de obra</span><span>{fmt(totalMO)}</span>
                   </div>
