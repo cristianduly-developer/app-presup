@@ -140,7 +140,7 @@ function bloqueFirma(firma_nombre, fecha_firma, tieneFirma) {
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E2E8E2;">
       <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Firma del cliente</div>
       <div style="border:1px solid #E2E8E2;border-radius:8px;padding:8px;background:#ffffff !important;display:inline-block;">
-        <img src="cid:firma_cliente" alt="Firma" style="height:60px;max-width:200px;display:block;background:#ffffff;mix-blend-mode:multiply;" />
+        <img src="cid:firma_cliente" alt="Firma" style="height:60px;max-width:200px;display:block;" />
       </div>
       <div style="margin-top:4px;font-size:11px;font-weight:700;color:#1A1A1A;">${firma_nombre || ''}</div>
       ${fecha_firma ? `<div style="font-size:10px;color:#6B7280;">${new Date(fecha_firma).toLocaleString('es-AR')}</div>` : ''}
