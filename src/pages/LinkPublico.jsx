@@ -205,10 +205,10 @@ export default function LinkPublico() {
   )
 
   return (
-    <div className="min-h-screen pb-40" style={{ background: '#0D0D14' }}>
+    <div className="min-h-screen pb-10" style={{ background: '#0D0D14' }}>
 
       {/* header profesional */}
-      <div className="px-5 pt-10 pb-6">
+      <div className="px-5 pt-10 pb-4">
         <div className="flex items-center gap-4">
           {/* avatar / logo */}
           {prof.logo_url ? (
@@ -260,6 +260,24 @@ export default function LinkPublico() {
           </div>
         )}
       </div>
+
+      {/* botones aceptar / rechazar — arriba, siempre visibles */}
+      {p.status === 'enviado' && !vencido && (
+        <div className="px-4 pb-4 flex gap-2 max-w-md mx-auto">
+          <button
+            onClick={() => setShowConfirmRechazar(true)}
+            className="flex-1 py-3 rounded-2xl font-semibold text-[14px]"
+            style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.25)', color: '#EF4444' }}>
+            ✕ Rechazar
+          </button>
+          <button
+            onClick={() => { setNombreFirma(p.cliente_nombre || ''); setShowFirma(true) }}
+            className="flex-2 px-6 py-3 rounded-2xl text-white font-bold text-[14px]"
+            style={{ background: '#22C55E', flex: 2, boxShadow: '0 0 20px rgba(34,197,94,.3)' }}>
+            ✅ Aceptar presupuesto
+          </button>
+        </div>
+      )}
 
       {/* divider */}
       <div className="mx-4 mb-4 h-px" style={{ background: '#1E1E2E' }} />
@@ -363,19 +381,12 @@ export default function LinkPublico() {
           </div>
         )}
 
-        {/* botón aceptar / panel firma */}
+        {/* panel firma y modal rechazo */}
         {p.status === 'enviado' && !vencido && (
           <>
             {errAceptar && <p className="text-red-400 text-xs text-center">{errAceptar}</p>}
 
-            {/* botón rechazar inline */}
-            <button onClick={() => setShowConfirmRechazar(true)}
-              className="w-full py-3 rounded-2xl font-semibold text-[14px]"
-              style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#EF4444' }}>
-              ✕ No aceptar este presupuesto
-            </button>
-
-            {/* bottom sheet firma (se abre al tocar el botón fijo de abajo) */}
+            {/* bottom sheet firma */}
             {showFirma && (
               <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: 'rgba(0,0,0,.6)' }}
                 onClick={() => { setShowFirma(false); limpiarFirma() }}>
@@ -485,17 +496,6 @@ export default function LinkPublico() {
 
       </div>
 
-      {/* ─── BOTÓN FIJO AL FONDO ─── */}
-      {p.status === 'enviado' && !vencido && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-3"
-          style={{ background: 'linear-gradient(to top, #0D0D14 70%, transparent)' }}>
-          <button onClick={() => { setNombreFirma(p.cliente_nombre || ''); setShowFirma(true) }}
-            className="w-full py-5 rounded-2xl text-white font-bold text-[17px] max-w-md mx-auto block"
-            style={{ background: '#22C55E', boxShadow: '0 0 30px rgba(34,197,94,.4)' }}>
-            ✅ ACEPTAR PRESUPUESTO
-          </button>
-        </div>
-      )}
 
       {/* contenido aprobado (reemplaza la sección de abajo cuando está aprobado) */}
       <div className="px-4 max-w-md mx-auto">

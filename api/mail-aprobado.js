@@ -11,7 +11,7 @@ async function subirFirmaStorage(base64, presupuestoId) {
     if (!matches) return null
     const [, mime, data] = matches
     const buf = Buffer.from(data, 'base64')
-    const path = `firmas/${presupuestoId}_${Date.now()}.png`
+    const path = `${presupuestoId}_${Date.now()}.png`
     const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/firmas/${path}`, {
       method: 'POST',
       headers: {

@@ -111,7 +111,7 @@ export default function NuevoPresupuesto() {
     async function cargarPlantilla() {
       const { data } = await supabase
         .from('plantillas')
-        .select('*, plantilla_items(*)')
+        .select('*')
         .eq('id', plantillaId)
         .single()
       if (!data) return
