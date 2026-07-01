@@ -125,8 +125,9 @@ export default function DetalleObra() {
   const pct       = obra.total > 0 ? Math.round((cobrado / obra.total) * 100) : 0
 
   const STATUS_NEXT = {
-    presupuestada:   { label: '▶ Iniciar obra',       next: 'en_ejecucion' },
-    en_ejecucion:    { label: '✓ Finalizar obra',     next: 'pendiente_cobro' },
+    presupuestada:   { label: '▶ Iniciar obra',        next: 'en_ejecucion' },
+    en_ejecucion:    { label: '✓ Finalizar obra',      next: 'finalizada' },
+    finalizada:      { label: '💰 Marcar como cobrada', next: 'cobrada' },
     pendiente_cobro: { label: '💰 Marcar como cobrada', next: 'cobrada' },
   }
 
@@ -328,7 +329,7 @@ export default function DetalleObra() {
           style={{ background: 'linear-gradient(to top, #0D0D14 70%, transparent)' }}>
           <div className="flex gap-2">
             {/* botón Cobrar — siempre visible si hay pendiente */}
-            {(obra.status === 'en_ejecucion' || obra.status === 'pendiente_cobro') && cobrado < obra.total && (
+            {(obra.status === 'en_ejecucion' || obra.status === 'pendiente_cobro' || obra.status === 'finalizada') && cobrado < obra.total && (
               <button onClick={() => { setModal('pago'); setForm({}) }}
                 className="flex-1 py-4 rounded-2xl text-white font-bold text-[15px] flex items-center justify-center gap-2"
                 style={{ background: '#22C55E' }}>
