@@ -11,26 +11,23 @@ export function usePlantillas() {
     setLoading(true)
     const { data } = await supabase
       .from('plantillas')
-      .select('*, plantilla_items(*)')
-      .order('usos', { ascending: false })
+      .select('*')
+      .order('created_at', { ascending: false })
     setPlantillas(data || [])
     setLoading(false)
   }
 
-  async function crear(datos, items) {
-    const { data: p, error } = await supabase
-      .from('plantillas')
-      .insert({ ...datos, usos: 0 })
-      .select()
-      .single()
-    if (error || !p) return { error }
-    if (items?.length) {
-      await supabase.from('plantilla_items').insert(
-        items.map(it => ({ ...it, plantilla_id: p.id }))
-      )
-    }
+  async function crear(nombre, items) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const totalEstimado = items.reduce((s, i) => s + (i.cantidad || 1) * (i.precio_unit || 0), 0)
+    const { error } = await supabase.from('plantillas').insert({
+      user_id: user.id,
+      nombre,
+      items,
+      total_estimado: totalEstimado,
+    })
     await cargar()
-    return { data: p }
+    return { error }
   }
 
   async function eliminar(id) {
@@ -38,9 +35,5 @@ export function usePlantillas() {
     setPlantillas(ps => ps.filter(p => p.id !== id))
   }
 
-  async function incrementarUso(id) {
-    await supabase.rpc('incrementar_uso_plantilla', { p_id: id })
-  }
-
-  return { plantillas, loading, cargar, crear, eliminar, incrementarUso }
+  return { plantillas, loading, cargar, crear, eliminar }
 }
