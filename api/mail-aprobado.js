@@ -134,17 +134,27 @@ function bloqueTotal(presupuesto) {
     ${bloqueSeña(presupuesto.senia_activa, presupuesto.senia_porcentaje, presupuesto.total)}`
 }
 
-function bloqueFirma(firma_imagen, firma_nombre, fecha_firma) {
-  if (!firma_imagen) return ''
+function bloqueFirma(firma_nombre, fecha_firma, tieneFirma) {
+  if (!tieneFirma) return ''
   return `
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E2E8E2;">
       <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Firma del cliente</div>
       <div style="border:1px solid #E2E8E2;border-radius:8px;padding:8px;background:#FAFAF8;display:inline-block;">
-        <img src="${firma_imagen}" alt="Firma" style="height:60px;max-width:200px;display:block;" />
+        <img src="cid:firma_cliente" alt="Firma" style="height:60px;max-width:200px;display:block;" />
       </div>
       <div style="margin-top:4px;font-size:11px;font-weight:700;color:#1A1A1A;">${firma_nombre || ''}</div>
       ${fecha_firma ? `<div style="font-size:10px;color:#6B7280;">${new Date(fecha_firma).toLocaleString('es-AR')}</div>` : ''}
     </div>`
+}
+
+function firmaAttachment(base64) {
+  if (!base64?.startsWith('data:image')) return null
+  try {
+    const matches = base64.match(/^data:(.+);base64,(.+)$/)
+    if (!matches) return null
+    const [, , data] = matches
+    return { filename: 'firma.png', content: data, content_type: 'image/png', content_id: 'firma_cliente', inline: true }
+  } catch { return null }
 }
 
 function layout(header, contenido) {
@@ -180,13 +190,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: 'datos_incompletos' })
 
   const { numero, titulo, firma_nombre } = presupuesto
-  // si firma_imagen es base64, subirla al storage y usar URL pública
-  let firma_imagen = presupuesto.firma_imagen
-  if (firma_imagen?.startsWith('data:image')) {
-    const url = await subirFirmaStorage(firma_imagen, numero)
-    if (url) firma_imagen = url
-    // si falla el upload, firma_imagen queda como base64 (algunos clientes la mostrarán igual)
-  }
+  const firma_imagen = presupuesto.firma_imagen
+  const attachment = firmaAttachment(firma_imagen)
+  const tieneFirma = !!attachment
 
   // ── Mail al PROFESIONAL ──────────────────────────────────────────────
   const htmlProf = layout(
@@ -198,7 +204,7 @@ export default async function handler(req, res) {
      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Detalle</div>
      ${tablaItems(presupuesto.items)}
      ${bloqueTotal(presupuesto)}
-     ${bloqueFirma(firma_imagen, firma_nombre, null)}
+     ${bloqueFirma(firma_nombre, null, tieneFirma)}
      <div style="text-align:center;margin-top:24px;">
        <a href="${APP_URL}" style="display:inline-block;background:#3D5A3E;color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">
          Ver en la app →
@@ -216,7 +222,7 @@ export default async function handler(req, res) {
      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Detalle</div>
      ${tablaItems(presupuesto.items)}
      ${bloqueTotal(presupuesto)}
-     ${bloqueFirma(firma_imagen, firma_nombre, null)}
+     ${bloqueFirma(firma_nombre, null, tieneFirma)}
      ${profesional.telefono ? `
      <div style="text-align:center;margin-top:24px;">
        <a href="https://wa.me/${profesional.telefono.replace(/\D/g,'')}"
@@ -232,27 +238,31 @@ export default async function handler(req, res) {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
     }
 
+    const buildPayload = (to, subject, html) => {
+      const payload = { from: MAIL_FROM, to, subject, html }
+      if (attachment) payload.attachments = [attachment]
+      return payload
+    }
+
     const mails = [
       fetch('https://api.resend.com/emails', {
         method: 'POST', headers,
-        body: JSON.stringify({
-          from: MAIL_FROM,
-          to: profesional.email,
-          subject: `🎉 Presupuesto #${numero} aprobado por ${cliente.nombre}`,
-          html: htmlProf,
-        }),
+        body: JSON.stringify(buildPayload(
+          profesional.email,
+          `🎉 Presupuesto #${numero} aprobado por ${cliente.nombre}`,
+          htmlProf
+        )),
       }),
     ]
 
     if (cliente.email) {
       mails.push(fetch('https://api.resend.com/emails', {
         method: 'POST', headers,
-        body: JSON.stringify({
-          from: MAIL_FROM,
-          to: cliente.email,
-          subject: `✅ Confirmaste el presupuesto #${numero} de ${profesional.nombre}`,
-          html: htmlCli,
-        }),
+        body: JSON.stringify(buildPayload(
+          cliente.email,
+          `✅ Confirmaste el presupuesto #${numero} de ${profesional.nombre}`,
+          htmlCli
+        )),
       }))
     }
 
