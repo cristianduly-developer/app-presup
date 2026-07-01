@@ -72,7 +72,15 @@ export default function LinkPublico() {
     setAceptando(true)
     setErrAceptar('')
     const canvas = canvasRef.current
-    const firmaBase64 = canvas.toDataURL('image/png')
+    // crear canvas temporal con fondo blanco para que el PNG no sea transparente
+    const tmpCanvas = document.createElement('canvas')
+    tmpCanvas.width = canvas.width
+    tmpCanvas.height = canvas.height
+    const tmpCtx = tmpCanvas.getContext('2d')
+    tmpCtx.fillStyle = '#ffffff'
+    tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height)
+    tmpCtx.drawImage(canvas, 0, 0)
+    const firmaBase64 = tmpCanvas.toDataURL('image/png')
 
     // intentar subir firma a Storage para obtener URL pública (usable en emails)
     let firmaUrl = null
