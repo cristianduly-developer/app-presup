@@ -95,6 +95,14 @@ export default async function handler(req, res) {
     app_id: APP_ID,
   }).then(() => {})
 
+  central.from('eventos_suscripcion').insert({
+    org_id: orgId,
+    app_id: APP_ID,
+    tipo: 'nueva_suscripcion',
+    descripcion: `Nueva demo — ${nombre} (${email})`,
+    plan: 'profesional',
+  }).then(() => {})
+
   // Bienvenida al usuario + notificación al admin
   try {
     const fechaAlta = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
