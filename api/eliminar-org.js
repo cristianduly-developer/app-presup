@@ -29,6 +29,7 @@ export default async function handler(req, res) {
     const uid = user.id
 
     // Borrar en orden de dependencia (items antes que padres)
+    await supa.from('firmas').delete().eq('user_id', uid)
     await supa.from('fotos').delete().eq('user_id', uid)
     await supa.from('horas').delete().eq('user_id', uid)
     await supa.from('visitas').delete().eq('user_id', uid)
