@@ -31,13 +31,17 @@ export default function Obras() {
   const [busqueda, setBusqueda] = useState(false)
   const [query, setQuery]     = useState('')
   const [colorPicker, setColorPicker] = useState(null) // obra id
+  const [coloresLocal, setColoresLocal] = useState({}) // override optimista
   const navigate = useNavigate()
-  const { obras, loading, cargar } = useObras()
+  const { obras: obrasDB, loading, cargar } = useObras()
 
-  async function guardarColor(obraId, color) {
+  // mezcla colores locales (optimistas) con los de la DB
+  const obras = obrasDB.map(o => coloresLocal[o.id] !== undefined ? { ...o, color: coloresLocal[o.id] } : o)
+
+  function guardarColor(obraId, color) {
     setColorPicker(null)
-    await supabase.from('obras').update({ color }).eq('id', obraId)
-    cargar()
+    setColoresLocal(prev => ({ ...prev, [obraId]: color })) // pinta al instante
+    supabase.from('obras').update({ color }).eq('id', obraId)
   }
 
   const porFiltro = filtro === 'Todas' ? obras
