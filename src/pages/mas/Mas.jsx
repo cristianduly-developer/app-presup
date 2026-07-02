@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { BarChart2, Users, LayoutTemplate, HardHat, Sparkles, Users2, FileBarChart, Settings, MessageCircle, LogOut, ChevronRight } from 'lucide-react'
+import { BarChart2, Users, LayoutTemplate, HardHat, Sparkles, Users2, FileBarChart, Settings, MessageCircle, LogOut, ChevronRight, CreditCard } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 
 const WA_SOPORTE = '5492235767784'
@@ -83,6 +83,17 @@ export default function Mas({ plan }) {
             {planLabel}
           </span>
         </div>
+
+        {/* mi suscripción */}
+        <button onClick={() => navigate('/miplan')}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70"
+          style={{ borderBottom: '1px solid #1E1E2E' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#3B82F622' }}>
+            <CreditCard size={18} style={{ color: '#3B82F6' }} />
+          </div>
+          <span className="flex-1 text-white text-[14px] text-left">Mi suscripción</span>
+          <ChevronRight size={16} className="text-gray-600" />
+        </button>
 
         {/* configuración */}
         <button onClick={() => navigate('/configuracion')}

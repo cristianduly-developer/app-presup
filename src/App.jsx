@@ -33,6 +33,7 @@ const Estadisticas        = lazy(() => import('./pages/mas/Estadisticas'))
 const Plantillas          = lazy(() => import('./pages/mas/Plantillas'))
 const Configuracion       = lazy(() => import('./pages/mas/Configuracion'))
 const Reportes            = lazy(() => import('./pages/mas/Reportes'))
+const MiPlan              = lazy(() => import('./pages/mas/MiPlan'))
 const LinkPublico         = lazy(() => import('./pages/LinkPublico'))
 
 export default function App() {
@@ -98,6 +99,7 @@ export default function App() {
   const tieneAcceso   = !user ? false : suscripcion?.tiene_acceso === true
   const estadoSus     = suscripcion?.estado || null
   const diasRestantes = suscripcion?.dias_restantes ?? null
+  const orgIdBloqueo  = suscripcion?.org_id || suscripcion?.ret_org_id || null
   const planRaw       = suscripcion?.plan || 'basico'
   // demo y trial tienen los mismos features que profesional
   const plan          = (planRaw === 'demo' || planRaw === 'trial' || planRaw === 'sincargo') ? 'profesional' : planRaw
@@ -117,7 +119,7 @@ export default function App() {
         ? 'registro'
         : (estadoSus === 'demo' && (diasRestantes ?? 0) <= 0)
           ? 'demo_vencido'
-          : (estadoSus === 'impago' || estadoSus === 'suspendido')
+          : (estadoSus === 'impago' || estadoSus === 'suspendido' || estadoSus === 'cancelado')
             ? 'suspendido'
             : 'registro')
     : 'app'
@@ -146,11 +148,11 @@ export default function App() {
             </div>
           ) : pantalla === 'demo_vencido' ? (
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
-              <PantallaDemoVencido email={user.email} />
+              <PantallaDemoVencido email={user.email} orgId={orgIdBloqueo} />
             </div>
           ) : pantalla === 'suspendido' ? (
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
-              <PantallaSuspendida email={user.email} estado={estadoSus} />
+              <PantallaSuspendida email={user.email} estado={estadoSus} orgId={orgIdBloqueo} />
             </div>
           ) : !onboardingVisto && !perfil?.nombre ? (
             <div className="flex flex-col h-full overflow-y-auto" style={{ background: '#0D0D14' }}>
@@ -187,6 +189,7 @@ export default function App() {
                 <Route path="/estadisticas" element={<Estadisticas />} />
                 <Route path="/plantillas" element={<Plantillas />} />
                 <Route path="/configuracion" element={<Configuracion />} />
+                <Route path="/miplan" element={<MiPlan />} />
                 <Route path="/reportes" element={<Reportes />} />
                 <Route path="*" element={<PlaceholderPage />} />
               </Routes>
@@ -366,62 +369,121 @@ function PantallaRegistro({ email, onRegistrado }) {
   )
 }
 
-function PantallaDemoVencido({ email }) {
-  const waMsg = encodeURIComponent(`Hola! Se me venció la prueba de App Presup. Mi email: ${email}`)
+function SelectorPlanesMP({ orgId, titulo, subtitulo, emoji, onSignOut }) {
+  const [planes,   setPlanes]   = useState([])
+  const [planSel,  setPlanSel]  = useState('profesional')
+  const [cargando, setCargando] = useState(false)
+  const [error,    setError]    = useState('')
+
+  useEffect(() => {
+    fetch('/api/planes-precios').then(r => r.json()).then(d => {
+      if (d.planes?.length) {
+        const metas = {
+          basico:      { label: 'Básico',      color: '#6B7280', emoji: '🔩' },
+          profesional: { label: 'Profesional', color: '#3B82F6', emoji: '⚡' },
+          premium:     { label: 'Premium',     color: '#A855F7', emoji: '🚀' },
+        }
+        const ordenados = ['basico', 'profesional', 'premium'].map(id => {
+          const row = d.planes.find(p => p.plan === id)
+          if (!row) return null
+          return { id, ...metas[id], precio: '$' + Number(row.precio_mensual).toLocaleString('es-AR'), beneficios: row.beneficios || [] }
+        }).filter(Boolean)
+        setPlanes(ordenados)
+      }
+    }).catch(() => {})
+  }, [])
+
+  const pagar = async () => {
+    if (!orgId) { setError('No se encontró tu organización. Intentá de nuevo.'); return }
+    setCargando(true); setError('')
+    try {
+      const r = await fetch('/api/mp-pago-publico', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: orgId, plan: planSel }),
+      })
+      const data = await r.json()
+      if (!r.ok || !data.init_point) { setError(data.error || 'Error al iniciar el pago.'); setCargando(false); return }
+      window.location.href = data.init_point
+    } catch { setError('Error de conexión. Intentá de nuevo.'); setCargando(false) }
+  }
+
+  const planInfo = planes.find(p => p.id === planSel)
+
   return (
-    <div className="flex flex-col min-h-full pb-12 px-5 items-center justify-center text-center">
-      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
-        style={{ background: 'rgba(251,191,36,.12)', border: '1px solid rgba(251,191,36,.3)' }}>
-        <span className="text-4xl">⏳</span>
+    <div className="flex flex-col min-h-full pb-12 px-5 pt-10" style={{ background: '#0D0D14' }}>
+      <div className="text-center mb-6">
+        <div className="text-5xl mb-3">{emoji}</div>
+        <h1 className="text-white font-bold text-[20px] mb-2">{titulo}</h1>
+        <p className="text-gray-400 text-[13px] max-w-xs mx-auto">{subtitulo}</p>
       </div>
-      <h1 className="text-white font-bold text-[22px] mb-3">Tu prueba gratuita venció</h1>
-      <p className="text-gray-400 text-[14px] max-w-xs mb-8">
-        Gracias por probar App Presup. Activá un plan para seguir gestionando tus presupuestos y obras.
-      </p>
-      <a href={`https://wa.me/${WA_SOPORTE}?text=${waMsg}`} target="_blank" rel="noreferrer"
-        className="w-full py-4 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2 mb-4"
-        style={{ background: '#22C55E', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>
-        <span className="text-xl">💬</span>
-        Activar mi cuenta
-      </a>
-      <button onClick={() => supabase.auth.signOut()}
-        className="text-gray-600 text-[11px] underline">
-        Cerrar sesión ({email})
+
+      {planes.map(p => (
+        <div key={p.id} onClick={() => setPlanSel(p.id)}
+          className="rounded-2xl p-4 mb-3 cursor-pointer transition-all"
+          style={{ border: `2px solid ${planSel === p.id ? p.color : '#1E1E2E'}`, background: planSel === p.id ? p.color + '12' : '#161622' }}>
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-bold text-[15px]" style={{ color: p.color }}>{p.emoji} {p.label}</span>
+            <span className="font-black text-white text-[15px]">{p.precio}<span className="text-gray-500 font-normal text-[11px]">/mes</span></span>
+          </div>
+          {p.beneficios?.length > 0 && (
+            <ul className="mt-2 flex flex-col gap-1">
+              {p.beneficios.map((b, i) => (
+                <li key={i} className="text-[11px] text-gray-400 flex items-center gap-1.5">
+                  <span style={{ color: p.color }}>✓</span>{b}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+
+      <div className="rounded-xl p-3 mb-4 text-[11px] text-blue-300"
+        style={{ background: 'rgba(59,130,246,.08)', border: '1px solid rgba(59,130,246,.2)' }}>
+        💳 El pago se procesa por <strong>Mercado Pago</strong>. Se renueva automáticamente cada mes.
+      </div>
+
+      {error && <p className="text-red-400 text-[12px] mb-3 text-center">{error}</p>}
+
+      <button onClick={pagar} disabled={cargando || !planInfo}
+        className="w-full py-4 rounded-2xl font-bold text-[15px] text-white mb-3 disabled:opacity-60"
+        style={{ background: cargando ? '#1E2A3A' : 'linear-gradient(135deg,#3B82F6,#2563EB)' }}>
+        {cargando ? 'Redirigiendo...' : `Suscribirme — Plan ${planInfo?.label ?? planSel}`}
+      </button>
+
+      <button onClick={onSignOut} className="text-gray-600 text-[11px] underline text-center mx-auto block">
+        Volver al inicio de sesión
       </button>
     </div>
   )
 }
 
-function PantallaSuspendida({ email, estado }) {
-  const waMsg = encodeURIComponent(
-    estado === 'impago'
-      ? `Hola! Quiero regularizar mi suscripción a App Presup. Mi email: ${email}`
-      : `Hola! Mi acceso a App Presup está suspendido. Mi email: ${email}`
-  )
+function PantallaDemoVencido({ email, orgId }) {
   return (
-    <div className="flex flex-col min-h-full pb-12 px-5 items-center justify-center text-center">
-      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
-        style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.3)' }}>
-        <span className="text-4xl">🔒</span>
-      </div>
-      <h1 className="text-white font-bold text-[22px] mb-3">
-        {estado === 'impago' ? 'Suscripción vencida' : 'Cuenta suspendida'}
-      </h1>
-      <p className="text-gray-400 text-[14px] max-w-xs mb-8">
-        {estado === 'impago'
-          ? 'Regularizá tu pago para reactivar el acceso a App Presup.'
-          : 'Contactá al soporte para resolver el problema con tu cuenta.'}
-      </p>
-      <a href={`https://wa.me/${WA_SOPORTE}?text=${waMsg}`} target="_blank" rel="noreferrer"
-        className="w-full py-4 rounded-2xl font-bold text-[15px] text-white flex items-center justify-center gap-2 mb-4"
-        style={{ background: '#22C55E', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>
-        <span className="text-xl">💬</span>
-        Contactar soporte
-      </a>
-      <button onClick={() => supabase.auth.signOut()}
-        className="text-gray-600 text-[11px] underline">
-        Cerrar sesión ({email})
-      </button>
-    </div>
+    <SelectorPlanesMP
+      orgId={orgId}
+      titulo="Tu prueba gratuita venció"
+      subtitulo="Activá un plan para seguir gestionando tus presupuestos y obras."
+      emoji="⏳"
+      onSignOut={() => supabase.auth.signOut()}
+    />
+  )
+}
+
+function PantallaSuspendida({ email, estado, orgId }) {
+  const titulo = estado === 'impago' ? 'Suscripción vencida'
+    : estado === 'cancelado' ? 'Suscripción cancelada'
+    : 'Cuenta suspendida'
+  const subtitulo = estado === 'impago' ? 'Regularizá tu pago para reactivar el acceso.'
+    : estado === 'cancelado' ? 'Tu suscripción fue cancelada. Elegí un plan para volver a acceder.'
+    : 'Reactivá tu suscripción para recuperar el acceso.'
+  return (
+    <SelectorPlanesMP
+      orgId={orgId}
+      titulo={titulo}
+      subtitulo={subtitulo}
+      emoji={estado === 'impago' ? '💳' : estado === 'cancelado' ? '📋' : '🔒'}
+      onSignOut={() => supabase.auth.signOut()}
+    />
   )
 }
