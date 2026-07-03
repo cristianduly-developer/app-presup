@@ -228,7 +228,11 @@ export default function NuevoPresupuesto() {
     )
     setGuardando(false)
     if (!error && data) navigate(`/presupuestos/${data.id}`)
-    else if (error) setLimiteError('No se pudo guardar el presupuesto. Verificá tu conexión e intentá de nuevo.')
+    else if (error) setLimiteError(
+      (error.tipo === 'paywall' || error.tipo === 'limite')
+        ? error.message
+        : 'No se pudo guardar el presupuesto. Verificá tu conexión e intentá de nuevo.'
+    )
 
     } catch (e) {
       console.error('[guardar]', e)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './supabase'
+import { supabase, mensajeErrorGuardado } from './supabase'
 import { showToast } from './toast'
 
 const TTL = 60_000
@@ -74,6 +74,8 @@ export function usePresupuestos() {
         const msg = error.message.replace('LIMITE_PLAN: ', '')
         return { error: { message: msg, tipo: 'limite' } }
       }
+      const paywall = mensajeErrorGuardado(error)
+      if (paywall) return { error: { message: paywall, tipo: 'paywall' } }
       return { error }
     }
     _cacheTs = 0
@@ -84,7 +86,7 @@ export function usePresupuestos() {
   async function actualizarStatus(id, status) {
     const extra = status === 'enviado' ? { fecha_envio: new Date().toISOString().split('T')[0] } : {}
     const { error } = await supabase.from('presupuestos').update({ status, ...extra }).eq('id', id)
-    if (error) { showToast('No se pudo actualizar el estado. Intentá de nuevo.', 'error'); return { error } }
+    if (error) { showToast(mensajeErrorGuardado(error) || 'No se pudo actualizar el estado. Intentá de nuevo.', 'error'); return { error } }
     _cacheTs = 0
     await cargar(true)
     return { error: null }
@@ -93,7 +95,7 @@ export function usePresupuestos() {
   async function registrarPago(presupuestoId, obraId, monto, metodo = 'efectivo') {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('pagos').insert({ user_id: user.id, presupuesto_id: presupuestoId, obra_id: obraId, monto, metodo, fecha: new Date().toISOString().split('T')[0] })
-    if (error) { showToast('No se pudo registrar el pago. Intentá de nuevo.', 'error'); return { error } }
+    if (error) { showToast(mensajeErrorGuardado(error) || 'No se pudo registrar el pago. Intentá de nuevo.', 'error'); return { error } }
     showToast('Pago registrado')
     _cacheTs = 0
     await cargar()

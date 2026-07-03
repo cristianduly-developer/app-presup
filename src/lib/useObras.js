@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './supabase'
+import { supabase, mensajeErrorGuardado } from './supabase'
 import { LIMITES } from './PlanContext'
 import { showToast } from './toast'
 
@@ -47,6 +47,8 @@ export function useObras() {
         const msg = error.message.replace('LIMITE_PLAN: ', '')
         return { error: { message: msg, tipo: 'limite' } }
       }
+      const paywall = mensajeErrorGuardado(error)
+      if (paywall) return { error: { message: paywall, tipo: 'paywall' } }
       return { error }
     }
     _cacheTs = 0
@@ -63,7 +65,7 @@ export function useObras() {
   async function registrarGasto(obraId, descripcion, monto, categoria = 'material') {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('gastos').insert({ user_id: user.id, obra_id: obraId, descripcion, monto, categoria, fecha: new Date().toISOString().split('T')[0] })
-    if (error) { showToast('No se pudo registrar el gasto. Intentá de nuevo.', 'error'); return { error } }
+    if (error) { showToast(mensajeErrorGuardado(error) || 'No se pudo registrar el gasto. Intentá de nuevo.', 'error'); return { error } }
     showToast('Gasto registrado')
     _cacheTs = 0
     await cargar(true)
@@ -73,7 +75,7 @@ export function useObras() {
   async function registrarHoras(obraId, cantidad, descripcion = '') {
     const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase.from('horas').insert({ user_id: user.id, obra_id: obraId, cantidad, descripcion, fecha: new Date().toISOString().split('T')[0] })
-    if (error) { showToast('No se pudieron registrar las horas. Intentá de nuevo.', 'error'); return { error } }
+    if (error) { showToast(mensajeErrorGuardado(error) || 'No se pudieron registrar las horas. Intentá de nuevo.', 'error'); return { error } }
     showToast('Horas registradas')
     _cacheTs = 0
     await cargar(true)

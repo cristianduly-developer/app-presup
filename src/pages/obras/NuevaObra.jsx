@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { supabase, mensajeErrorGuardado } from '../../lib/supabase'
 import { useAuth } from '../../lib/useAuth'
 import { useClientes } from '../../lib/useClientes'
 import { usePlan, LIMITES } from '../../lib/PlanContext'
@@ -46,6 +46,7 @@ export default function NuevaObra() {
     }).select().single()
     setGuardando(false)
     if (!error && data) navigate(`/obras/${data.id}`)
+    else if (error) setLimiteError(mensajeErrorGuardado(error) || 'No se pudo guardar la obra. Intentá de nuevo.')
   }
 
   return (
