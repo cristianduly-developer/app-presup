@@ -95,7 +95,7 @@ export function usePresupuestos() {
     }
 
     if (items.length > 0) {
-      await supabase.from('presupuesto_items').insert(
+      const { error: itemsError } = await supabase.from('presupuesto_items').insert(
         items.map((it, i) => ({
           presupuesto_id: presup.id,
           tipo:           it.tipo,
@@ -107,6 +107,10 @@ export function usePresupuestos() {
           orden:          i,
         }))
       )
+      if (itemsError) {
+        await supabase.from('presupuestos').delete().eq('id', presup.id)
+        return { error: itemsError }
+      }
     }
 
     _cacheTs = 0
