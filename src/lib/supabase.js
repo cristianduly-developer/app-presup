@@ -5,4 +5,4 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const supabase = createClient(url, key)
 
-export { mensajeErrorGuardado } from '@solucionesmdp/core/errores'
+export { mensajeErrorGuardado } from '@solucionesmdp/core'
