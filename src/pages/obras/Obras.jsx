@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, RefreshCw, X } from 'lucide-react'
 import CircleProgress from '../../components/ui/CircleProgress'
-import { useObras } from '../../lib/useObras'
+import { useObras, invalidarCacheObras } from '../../lib/useObras'
 import { supabase } from '../../lib/supabase'
 import { fmt } from '../../lib/fmt'
 
@@ -38,10 +38,11 @@ export default function Obras() {
   // mezcla colores locales (optimistas) con los de la DB
   const obras = obrasDB.map(o => coloresLocal[o.id] !== undefined ? { ...o, color: coloresLocal[o.id] } : o)
 
-  function guardarColor(obraId, color) {
+  async function guardarColor(obraId, color) {
     setColorPicker(null)
-    setColoresLocal(prev => ({ ...prev, [obraId]: color })) // pinta al instante
-    supabase.from('obras').update({ color }).eq('id', obraId)
+    setColoresLocal(prev => ({ ...prev, [obraId]: color }))
+    await supabase.from('obras').update({ color }).eq('id', obraId)
+    invalidarCacheObras()
   }
 
   const porFiltro = filtro === 'Todas' ? obras
