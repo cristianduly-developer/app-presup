@@ -1,8 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
-import { syncTenantAccess } from '@solucionesmdp/core'
 
 const APP_ID = 'app-presup'
-const supaLocal = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+const GRACE_DAYS = 7
+
+async function syncTenantAccess(userId, plan, diasRestantes) {
+  try {
+    const supa = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const dias = (diasRestantes ?? 3650) + GRACE_DAYS
+    const validUntil = new Date(Date.now() + dias * 86400000).toISOString()
+    await supa.from('tenant_access').upsert(
+      { tenant_id: userId, plan: plan ?? 'basico', valid_until: validUntil },
+      { onConflict: 'tenant_id' }
+    )
+  } catch { /* tabla aún no creada: ignorar */ }
+}
 
 // Rate limit: máx 30 verificaciones por IP por hora
 const ipLog = new Map()
@@ -123,7 +134,7 @@ export default async function handler(req, res) {
       .eq('id', user.id)
       .then(() => {})
 
-    await syncTenantAccess(supaLocal, user.id, acceso.plan, acceso.dias_restantes)
+    await syncTenantAccess(user.id, acceso.plan, acceso.dias_restantes)
   }
 
   res.setHeader('Cache-Control', 'private, max-age=120')
