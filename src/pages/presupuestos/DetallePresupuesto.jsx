@@ -24,6 +24,7 @@ export default function DetallePresupuesto() {
   const [eliminando, setEliminando] = useState(false)
   const [confirmEliminar, setConfirmEliminar] = useState(false)
   const [iniciando, setIniciando] = useState(false)
+  const [aprobando, setAprobando] = useState(false)
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
 
@@ -99,6 +100,14 @@ export default function DetallePresupuesto() {
     await supabase.from('presupuesto_items').delete().eq('presupuesto_id', id)
     await supabase.from('presupuestos').delete().eq('id', id)
     navigate('/presupuestos', { replace: true })
+  }
+
+  async function aprobarManual() {
+    setAprobando(true)
+    await supabase.from('presupuestos').update({ status: 'aprobado' }).eq('id', id)
+    await cargar()
+    setAprobando(false)
+    toast('Presupuesto aprobado ✓')
   }
 
   async function iniciarObra() {
@@ -260,6 +269,15 @@ export default function DetallePresupuesto() {
         <div className="rounded-2xl p-4" style={{ background: '#161622', border: '1px solid #1E1E2E' }}>
           <p className="text-gray-500 text-[10px] font-semibold tracking-wider mb-3">ACCIONES</p>
           <div className="flex flex-col gap-2">
+
+            {/* aprobar manualmente */}
+            {['borrador', 'enviado'].includes(p.status) && (
+              <button onClick={aprobarManual} disabled={aprobando}
+                className="w-full py-3.5 rounded-2xl text-white font-bold text-[14px] flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ background: '#22C55E' }}>
+                ✓ {aprobando ? 'Guardando...' : 'Marcar como aprobado'}
+              </button>
+            )}
 
             {/* iniciar obra - solo si aprobado */}
             {p.status === 'aprobado' && (
