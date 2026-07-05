@@ -54,30 +54,61 @@ export function usePresupuestos() {
       ? new Date(Date.now() + datos.vigencia_dias * 86400000).toISOString().split('T')[0]
       : null
 
-    const { data: presup, error } = await supabase.rpc('crear_presupuesto', {
-      p_user_id:          user.id,
-      p_titulo:           datos.titulo || '',
-      p_cliente_id:       datos.cliente_id || null,
-      p_vigencia_dias:    datos.vigencia_dias || 5,
-      p_notas_internas:   datos.notas_internas || '',
-      p_status:           datos.status || 'borrador',
-      p_total:            total,
-      p_total_materiales: totalMat,
-      p_total_mano_obra:  totalMO,
-      p_margen_estimado:  total - totalMat,
-      p_fecha_vence:      fechaVence,
-      p_items:            items.map((it, i) => ({ ...it, orden: i })),
-    })
+    // número correlativo
+    const { data: maxData } = await supabase
+      .from('presupuestos')
+      .select('numero')
+      .eq('user_id', user.id)
+      .order('numero', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const numero = (maxData?.numero || 0) + 1
+
+    // token público aleatorio
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const { data: presup, error } = await supabase
+      .from('presupuestos')
+      .insert({
+        user_id:          user.id,
+        numero,
+        titulo:           datos.titulo || '',
+        cliente_id:       datos.cliente_id || null,
+        status:           datos.status || 'borrador',
+        total,
+        total_materiales: totalMat,
+        total_mano_obra:  totalMO,
+        margen_estimado:  total - totalMat,
+        vigencia_dias:    datos.vigencia_dias || 5,
+        notas_internas:   datos.notas_internas || '',
+        fecha_vence:      fechaVence,
+        token_publico:    token,
+      })
+      .select('id, numero, token_publico')
+      .single()
 
     if (error) {
-      if (error.message?.includes('LIMITE_PLAN')) {
-        const msg = error.message.replace('LIMITE_PLAN: ', '')
-        return { error: { message: msg, tipo: 'limite' } }
-      }
       const paywall = mensajeErrorGuardado(error)
       if (paywall) return { error: { message: paywall, tipo: 'paywall' } }
       return { error }
     }
+
+    if (items.length > 0) {
+      await supabase.from('presupuesto_items').insert(
+        items.map((it, i) => ({
+          presupuesto_id: presup.id,
+          tipo:           it.tipo,
+          descripcion:    it.descripcion,
+          unidad:         it.unidad || '',
+          cantidad:       it.tipo === 'seccion' ? 0 : (it.cantidad || 0),
+          precio_unit:    it.tipo === 'seccion' ? 0 : (it.precio_unit || 0),
+          subtotal:       it.tipo === 'seccion' ? 0 : (it.cantidad || 0) * (it.precio_unit || 0),
+          orden:          i,
+        }))
+      )
+    }
+
     _cacheTs = 0
     await cargar(true)
     return { data: presup }
