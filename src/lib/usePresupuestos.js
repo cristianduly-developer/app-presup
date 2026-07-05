@@ -103,7 +103,6 @@ export function usePresupuestos() {
           unidad:         it.unidad || '',
           cantidad:       it.tipo === 'seccion' ? 0 : (it.cantidad || 0),
           precio_unit:    it.tipo === 'seccion' ? 0 : (it.precio_unit || 0),
-          subtotal:       it.tipo === 'seccion' ? 0 : (it.cantidad || 0) * (it.precio_unit || 0),
           orden:          i,
         }))
       )
