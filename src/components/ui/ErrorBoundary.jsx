@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { reportarError } from '../../lib/reportarError'
 
 export default class ErrorBoundary extends Component {
   state = { error: null }
@@ -6,7 +7,7 @@ export default class ErrorBoundary extends Component {
   static getDerivedStateFromError(error) { return { error } }
 
   componentDidCatch(error, info) {
-    console.error('[ErrorBoundary]', error, info?.componentStack)
+    reportarError(error, { pantalla: window.location.pathname, accion: 'error_boundary', metadata: { componentStack: info?.componentStack } })
   }
 
   render() {
