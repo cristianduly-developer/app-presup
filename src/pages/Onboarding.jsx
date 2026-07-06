@@ -48,6 +48,14 @@ export default function Onboarding({ nombre, diasRestantes, onFinalizar }) {
       actualizarPerfil({ oficio }).catch(() => {})
     }
     if (esUltimo) {
+      const email = user?.email
+      if (email) {
+        fetch('https://saas.solucionesmdp.com.ar/api/prospecto-activado', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-app-id': 'app-presup', 'x-app-key': import.meta.env.VITE_ERROR_KEY || '' },
+          body: JSON.stringify({ email }),
+        }).catch(() => {})
+      }
       onFinalizar()
       return
     }
