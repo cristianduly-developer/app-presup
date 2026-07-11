@@ -40,9 +40,9 @@ export default async function handler(req, res) {
   if (!sub?.mp_preapproval_id) return res.status(400).json({ error: 'No tenés débito automático activo.' })
 
   try {
-    const r = await fetch(`${SAAS_URL}/api/mp-cancelar-suscripcion`, {
+    const r = await fetch(`${SAAS_URL}/api/mp-crear-suscripcion?action=cancelar`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-internal-key': process.env.INTERNAL_API_KEY || '' },
       body: JSON.stringify({ org_id: emp.org_id, app_id: 'app-presup', mp_preapproval_id: sub.mp_preapproval_id }),
     })
     return res.status(r.status).json(await r.json())
