@@ -163,13 +163,11 @@ export function usePresupuestoPublico(token) {
   async function aceptar(firma = {}) {
     const { data: result } = await supabase.rpc('aceptar_presupuesto', { p_token: token })
     if (result?.ok && firma.firma_imagen) {
-      const { error: firmaErr } = await supabase.from('presupuestos')
-        .update({
-          firma_imagen: firma.firma_imagen,
-          firma_nombre: firma.firma_nombre || '',
-          firma_fecha:  new Date().toISOString(),
-        })
-        .eq('token_publico', token)
+      const { data: firmaResult, error: firmaErr } = await supabase.rpc('guardar_firma_presupuesto', {
+        p_token: token,
+        p_firma_imagen: firma.firma_imagen,
+        p_firma_nombre: firma.firma_nombre || '',
+      })
       if (firmaErr) console.error('[aceptar] firma no guardada:', firmaErr.message)
     }
     return result
