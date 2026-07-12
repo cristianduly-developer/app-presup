@@ -17,6 +17,8 @@ begin
     p.cliente_id,
     c.nombre as cliente_nombre,
     c.telefono as cliente_telefono,
+    c.email as cliente_email,
+    c.direccion as cliente_direccion,
     pf.nombre as prof_nombre,
     pf.oficio as prof_oficio,
     pf.telefono as prof_telefono,

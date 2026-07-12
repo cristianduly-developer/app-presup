@@ -1,30 +1,12 @@
+import { createClient } from '@supabase/supabase-js'
+
 const MAIL_FROM      = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
 const APP_URL        = 'https://presupuestos.solucionesmdp.com.ar'
 const WA_SOPORTE     = '5492235767784'
-const SUPABASE_URL   = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-const SUPABASE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+const SUPABASE_URL   = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+const SUPABASE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-async function subirFirmaStorage(base64, presupuestoId) {
-  if (!base64?.startsWith('data:image')) return null
-  try {
-    const matches = base64.match(/^data:(.+);base64,(.+)$/)
-    if (!matches) return null
-    const [, mime, data] = matches
-    const buf = Buffer.from(data, 'base64')
-    const path = `${presupuestoId}_${Date.now()}.png`
-    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/firmas/${path}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': mime,
-        'x-upsert': 'true',
-      },
-      body: buf,
-    })
-    if (!uploadRes.ok) return null
-    return `${SUPABASE_URL}/storage/v1/object/public/firmas/${path}`
-  } catch { return null }
-}
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 function fmt(n) {
   return '$' + Number(n || 0).toLocaleString('es-AR')
@@ -35,20 +17,25 @@ function fmtFecha(str) {
   return new Date(str).toLocaleDateString('es-AR')
 }
 
+function escHtml(s) {
+  if (!s) return ''
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
 function tablaItems(items) {
   const filas = (items || []).map(i => {
     if (i.tipo === 'seccion') return `
       <tr>
         <td colspan="4" style="padding:8px 12px;background:#f0f4f0;border-left:3px solid #3D5A3E;font-size:10px;font-weight:700;color:#3D5A3E;text-transform:uppercase;letter-spacing:.5px;">
-          ${i.descripcion || 'Etapa'}
+          ${escHtml(i.descripcion || 'Etapa')}
         </td>
       </tr>`
     return `
       <tr style="border-bottom:1px solid #f0f0f0;">
         <td style="padding:9px 12px;color:#1A1A1A;font-weight:600;font-size:13px;">
-          ${i.descripcion || (i.tipo === 'mano_obra' ? 'Mano de obra' : 'Material')}
+          ${escHtml(i.descripcion || (i.tipo === 'mano_obra' ? 'Mano de obra' : 'Material'))}
         </td>
-        <td style="padding:9px 12px;color:#6B7280;text-align:center;font-size:13px;">${i.cantidad}</td>
+        <td style="padding:9px 12px;color:#6B7280;text-align:center;font-size:13px;">${Number(i.cantidad) || 0}</td>
         <td style="padding:9px 12px;color:#6B7280;text-align:right;font-size:13px;">${fmt(i.precio_unit)}</td>
         <td style="padding:9px 12px;color:#1A1A1A;font-weight:700;text-align:right;font-size:13px;">${fmt(i.subtotal || i.cantidad * i.precio_unit)}</td>
       </tr>`
@@ -73,24 +60,24 @@ function bloqueSeña(senia_activa, senia_porcentaje, total) {
   const monto = Math.round(total * senia_porcentaje / 100)
   return `
     <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:12px 16px;margin-top:8px;">
-      <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:2px;">💰 Seña requerida para confirmar (${senia_porcentaje}%)</div>
+      <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:2px;">Seña requerida para confirmar (${senia_porcentaje}%)</div>
       <div style="font-size:20px;font-weight:900;color:#92400E;">${fmt(monto)}</div>
     </div>`
 }
 
 function bloqueCliente(cliente) {
   const lineas = [
-    cliente.telefono  && `☎ ${cliente.telefono}`,
-    cliente.email     && `✉ ${cliente.email}`,
-    cliente.direccion && `📍 ${cliente.direccion}`,
+    cliente.telefono  && `${escHtml(cliente.telefono)}`,
+    cliente.email     && `${escHtml(cliente.email)}`,
+    cliente.direccion && `${escHtml(cliente.direccion)}`,
   ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;')
   return `
     <div style="background:#f0f4f0;border:1px solid #E2E8E2;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
       <div style="width:40px;height:40px;border-radius:50%;background:#3D5A3E;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;">
-        ${cliente.nombre.charAt(0).toUpperCase()}
+        ${escHtml(cliente.nombre?.charAt(0)?.toUpperCase())}
       </div>
       <div>
-        <div style="font-weight:800;font-size:15px;color:#1A1A1A;margin-bottom:3px;">${cliente.nombre}</div>
+        <div style="font-weight:800;font-size:15px;color:#1A1A1A;margin-bottom:3px;">${escHtml(cliente.nombre)}</div>
         ${lineas ? `<div style="font-size:11px;color:#6B7280;">${lineas}</div>` : ''}
       </div>
     </div>`
@@ -98,12 +85,12 @@ function bloqueCliente(cliente) {
 
 function bloqueProfesional(profesional) {
   const lineas = [
-    profesional.telefono && `☎ ${profesional.telefono}`,
-    profesional.email    && `✉ ${profesional.email}`,
+    profesional.telefono && `${escHtml(profesional.telefono)}`,
+    profesional.email    && `${escHtml(profesional.email)}`,
   ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;')
   return `
     <div style="background:#f0f4f0;border:1px solid #E2E8E2;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
-      <div style="font-weight:800;font-size:14px;color:#1A1A1A;margin-bottom:2px;">${profesional.nombre}${profesional.oficio ? `<span style="font-weight:400;color:#5C7A5D;font-size:12px;margin-left:8px;">${profesional.oficio}</span>` : ''}</div>
+      <div style="font-weight:800;font-size:14px;color:#1A1A1A;margin-bottom:2px;">${escHtml(profesional.nombre)}${profesional.oficio ? `<span style="font-weight:400;color:#5C7A5D;font-size:12px;margin-left:8px;">${escHtml(profesional.oficio)}</span>` : ''}</div>
       ${lineas ? `<div style="font-size:11px;color:#6B7280;">${lineas}</div>` : ''}
     </div>`
 }
@@ -113,8 +100,8 @@ function bloqueInfo(presupuesto) {
     <div style="display:flex;gap:24px;margin-bottom:8px;flex-wrap:wrap;">
       <div>
         <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">Presupuesto</div>
-        <div style="font-size:28px;font-weight:900;color:#3D5A3E;line-height:1;">#${presupuesto.numero}</div>
-        ${presupuesto.titulo ? `<div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-top:3px;">${presupuesto.titulo}</div>` : ''}
+        <div style="font-size:28px;font-weight:900;color:#3D5A3E;line-height:1;">#${Number(presupuesto.numero) || 0}</div>
+        ${presupuesto.titulo ? `<div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-top:3px;">${escHtml(presupuesto.titulo)}</div>` : ''}
       </div>
       <div style="margin-left:auto;text-align:right;">
         <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;">Fecha</div>
@@ -142,7 +129,7 @@ function bloqueFirma(firma_nombre, fecha_firma, tieneFirma) {
       <div style="border:1px solid #E2E8E2;border-radius:8px;padding:8px;background:#ffffff !important;display:inline-block;">
         <img src="cid:firma_cliente" alt="Firma" style="height:60px;max-width:200px;display:block;" />
       </div>
-      <div style="margin-top:4px;font-size:11px;font-weight:700;color:#1A1A1A;">${firma_nombre || ''}</div>
+      <div style="margin-top:4px;font-size:11px;font-weight:700;color:#1A1A1A;">${escHtml(firma_nombre)}</div>
       ${fecha_firma ? `<div style="font-size:10px;color:#6B7280;">${new Date(fecha_firma).toLocaleString('es-AR')}</div>` : ''}
     </div>`
 }
@@ -180,6 +167,19 @@ function layout(header, contenido) {
 
 import { reportarError } from './reportarError.js'
 
+const ipRequests = new Map()
+const RATE_LIMIT = 10
+const RATE_WINDOW = 60000
+
+function checkRate(ip) {
+  const now = Date.now()
+  const entry = ipRequests.get(ip) || { count: 0, start: now }
+  if (now - entry.start > RATE_WINDOW) { entry.count = 0; entry.start = now }
+  entry.count++
+  ipRequests.set(ip, entry)
+  return entry.count <= RATE_LIMIT
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -187,18 +187,39 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ ok: false })
 
-  const { presupuesto, cliente, profesional } = req.body || {}
-  if (!presupuesto || !cliente || !profesional)
-    return res.status(400).json({ ok: false, error: 'datos_incompletos' })
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown'
+  if (!checkRate(ip)) return res.status(429).json({ ok: false, error: 'rate_limit' })
 
-  const { numero, titulo, firma_nombre } = presupuesto
-  const firma_imagen = presupuesto.firma_imagen
-  const attachment = firmaAttachment(firma_imagen)
-  const tieneFirma = !!attachment
+  const { token } = req.body || {}
+  if (!token || typeof token !== 'string' || token.length < 16) {
+    return res.status(400).json({ ok: false, error: 'token_requerido' })
+  }
 
-  // ── Mail al PROFESIONAL ──────────────────────────────────────────────
+  // Re-verificar presupuesto desde la DB usando el token público
+  const { data: p, error: pErr } = await supabase.rpc('get_presupuesto_publico', { p_token: token })
+  if (pErr || !p) return res.status(404).json({ ok: false, error: 'presupuesto_no_encontrado' })
+  if (p.status !== 'aprobado') return res.status(400).json({ ok: false, error: 'no_aprobado' })
+
+  const presupuesto = p
+  const cliente = {
+    nombre: p.cliente_nombre || '',
+    telefono: p.cliente_telefono || '',
+    email: p.cliente_email || '',
+    direccion: p.cliente_direccion || '',
+  }
+  const profesional = {
+    nombre: p.prof_nombre || '',
+    oficio: p.prof_oficio || '',
+    telefono: p.prof_telefono || '',
+    email: '', // prof email not in RPC; use prof_telefono for WhatsApp contact
+  }
+
+  const firma_imagen = null // firma ya almacenada en DB, no se re-envía desde el cliente
+  const attachment = null
+  const tieneFirma = !!p.firma_nombre
+
   const htmlProf = layout(
-    { titulo: `🎉 ¡Presupuesto #${numero} aprobado!`, subtitulo: `${cliente.nombre} aceptó y firmó tu presupuesto.` },
+    { titulo: `Presupuesto #${Number(p.numero) || 0} aprobado`, subtitulo: `${escHtml(cliente.nombre)} aceptó tu presupuesto.` },
     `${bloqueInfo(presupuesto)}
      <hr style="border:none;border-top:1px solid #E2E8E2;margin:16px 0;">
      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Cliente</div>
@@ -206,17 +227,27 @@ export default async function handler(req, res) {
      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Detalle</div>
      ${tablaItems(presupuesto.items)}
      ${bloqueTotal(presupuesto)}
-     ${bloqueFirma(firma_nombre, null, tieneFirma)}
      <div style="text-align:center;margin-top:24px;">
        <a href="${APP_URL}" style="display:inline-block;background:#3D5A3E;color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">
-         Ver en la app →
+         Ver en la app
        </a>
      </div>`
   )
 
-  // ── Mail al CLIENTE ──────────────────────────────────────────────────
+  // Obtener email del profesional desde perfiles
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('email')
+    .eq('id', presupuesto.user_id || presupuesto.prof_id)
+    .single()
+
+  const profEmail = perfil?.email
+  if (!profEmail) {
+    return res.status(400).json({ ok: false, error: 'profesional_sin_email' })
+  }
+
   const htmlCli = layout(
-    { titulo: `✅ Confirmaste el presupuesto #${numero}`, subtitulo: `Tu aceptación fue registrada. ${profesional.nombre} fue notificado/a.` },
+    { titulo: `Confirmaste el presupuesto #${Number(p.numero) || 0}`, subtitulo: `Tu aceptación fue registrada. ${escHtml(profesional.nombre)} fue notificado/a.` },
     `${bloqueInfo(presupuesto)}
      <hr style="border:none;border-top:1px solid #E2E8E2;margin:16px 0;">
      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Profesional</div>
@@ -224,12 +255,11 @@ export default async function handler(req, res) {
      <div style="font-size:9px;font-weight:700;color:#5C7A5D;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Detalle</div>
      ${tablaItems(presupuesto.items)}
      ${bloqueTotal(presupuesto)}
-     ${bloqueFirma(firma_nombre, null, tieneFirma)}
      ${profesional.telefono ? `
      <div style="text-align:center;margin-top:24px;">
        <a href="https://wa.me/${profesional.telefono.replace(/\D/g,'')}"
          style="display:inline-block;background:#22C55E;color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">
-         💬 Contactar a ${profesional.nombre}
+         Contactar a ${escHtml(profesional.nombre)}
        </a>
      </div>` : ''}`
   )
@@ -240,31 +270,17 @@ export default async function handler(req, res) {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
     }
 
-    const buildPayload = (to, subject, html) => {
-      const payload = { from: MAIL_FROM, to, subject, html }
-      if (attachment) payload.attachments = [attachment]
-      return payload
-    }
-
     const mails = [
       fetch('https://api.resend.com/emails', {
         method: 'POST', headers,
-        body: JSON.stringify(buildPayload(
-          profesional.email,
-          `🎉 Presupuesto #${numero} aprobado por ${cliente.nombre}`,
-          htmlProf
-        )),
+        body: JSON.stringify({ from: MAIL_FROM, to: profEmail, subject: `Presupuesto #${Number(p.numero) || 0} aprobado por ${escHtml(cliente.nombre)}`, html: htmlProf }),
       }),
     ]
 
     if (cliente.email) {
       mails.push(fetch('https://api.resend.com/emails', {
         method: 'POST', headers,
-        body: JSON.stringify(buildPayload(
-          cliente.email,
-          `✅ Confirmaste el presupuesto #${numero} de ${profesional.nombre}`,
-          htmlCli
-        )),
+        body: JSON.stringify({ from: MAIL_FROM, to: cliente.email, subject: `Confirmaste el presupuesto #${Number(p.numero) || 0} de ${escHtml(profesional.nombre)}`, html: htmlCli }),
       }))
     }
 
@@ -272,7 +288,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true })
   } catch (e) {
     console.error('[mail-aprobado]', e.message)
-    reportarError(e, { pantalla: 'mail-aprobado', accion: 'send_email', user_email: profesional?.email })
+    reportarError(e, { pantalla: 'mail-aprobado', accion: 'send_email', user_email: profEmail })
     return res.status(500).json({ ok: false, error: e.message })
   }
 }

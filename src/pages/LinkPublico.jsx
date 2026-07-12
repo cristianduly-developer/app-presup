@@ -103,33 +103,7 @@ export default function LinkPublico() {
       fetch('/api/mail-aprobado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          presupuesto: {
-            numero:           p.numero,
-            titulo:           p.titulo,
-            total:            p.total,
-            fecha_vence:      p.fecha_vence,
-            fecha_emision:    p.created_at,
-            vigencia_dias:    p.vigencia_dias,
-            senia_activa:     p.senia_activa,
-            senia_porcentaje: p.senia_porcentaje,
-            firma_imagen:     firmaUrl || firmaBase64,  // URL pública si subió al storage, si no base64
-            firma_nombre:     nombreFirma || p.cliente_nombre,
-            items:            p.items || [],
-          },
-          cliente: {
-            nombre:    p.cliente_nombre || '',
-            email:     p.cliente_email || '',
-            telefono:  p.cliente_telefono || '',
-            direccion: p.cliente_direccion || '',
-          },
-          profesional: {
-            nombre:    p.prof_nombre || '',
-            email:     p.prof_email || '',
-            telefono:  p.prof_telefono || '',
-            oficio:    p.prof_oficio || '',
-          },
-        }),
+        body: JSON.stringify({ token }),
       }).catch(() => {})
     } else {
       setErrAceptar(result?.error || 'Error al aceptar. Intentá de nuevo.')
