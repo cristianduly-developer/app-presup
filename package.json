@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@sentry/react": "^10.59.0",
-    "@solucionesmdp/core": "github:cristianduly-developer/mdp-core",
+    "@solucionesmdp/core": "github:cristianduly-developer/mdp-core#b8a4cbc",
     "@supabase/supabase-js": "^2.108.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.18.0",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
