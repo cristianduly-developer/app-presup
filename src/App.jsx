@@ -6,7 +6,7 @@ import { verificarSuscripcion } from './lib/useSuscripcion'
 import { supabase } from './lib/supabase'
 import { invalidarCacheObras } from './lib/useObras'
 
-const WA_SOPORTE = '5492235767784'
+const WA_SOPORTE = '5492236965481'
 import { PlanContext } from './lib/PlanContext'
 import BottomNav from './components/ui/BottomNav'
 import Sidebar from './components/ui/Sidebar'

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { BarChart2, Users, LayoutTemplate, HardHat, Sparkles, Users2, FileBarChart, Settings, MessageCircle, LogOut, ChevronRight, CreditCard } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 
-const WA_SOPORTE = '5492235767784'
+const WA_SOPORTE = '5492236965481'
 
 const TILES = [
   { icon: BarChart2,      label: 'Estadísticas',  color: '#2563EB', to: '/estadisticas' },

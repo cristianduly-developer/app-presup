@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const MAIL_FROM      = 'App Presupuestos <noreply-presupuestos@solucionesmdp.com.ar>'
 const APP_URL        = 'https://presupuestos.solucionesmdp.com.ar'
-const WA_SOPORTE     = '5492235767784'
+const WA_SOPORTE     = '5492236965481'
 const SUPABASE_URL   = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
 const SUPABASE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
