@@ -79,7 +79,7 @@ export default function Sidebar({ plan, estadoSus, diasRestantes }) {
           <span className="text-base">📖</span>
           Ayuda
         </button>
-        <a href="https://wa.me/5492236965481?text=Hola%2C+soy+usuario+de+App+Presupuestos+y+necesito+soporte" target="_blank" rel="noreferrer"
+        <a href={`https://wa.me/5492236965481?text=${encodeURIComponent(`Hola, soy usuario de App Presupuestos y necesito soporte.\nMi mail: ${user?.email || '(no tengo)'}\nMi problema es: `)}`} target="_blank" rel="noreferrer"
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-all mb-0.5"
           style={{ textDecoration: 'none' }}>
           <span className="text-base">💬</span>

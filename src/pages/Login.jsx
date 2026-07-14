@@ -68,7 +68,7 @@ export default function Login() {
         Al ingresar aceptás los términos de uso. Tus datos están protegidos y son solo tuyos.
       </p>
 
-      <a href="https://wa.me/5492236965481?text=Hola%2C+soy+usuario+de+App+Presupuestos+y+necesito+soporte" target="_blank" rel="noreferrer"
+      <a href={`https://wa.me/5492236965481?text=${encodeURIComponent('Hola, soy usuario de App Presupuestos y necesito soporte.\nMi mail: \nMi problema es: ')}`} target="_blank" rel="noreferrer"
         className="flex items-center justify-center gap-2 mt-5 text-[13px] font-medium"
         style={{ color: '#22C55E' }}>
         <span>💬</span> Contactar soporte
