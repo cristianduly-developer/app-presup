@@ -1,25 +1,44 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
 
 export function useAuth() {
   const [user, setUser] = useState(null)
   const [perfil, setPerfil] = useState(null)
   const [loading, setLoading] = useState(true)
+  const userRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) cargarPerfil(session.user.id)
+      const u = session?.user ?? null
+      setUser(u); userRef.current = u
+      if (u) cargarPerfil(u.id)
       else setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) cargarPerfil(session.user.id)
+      const u = session?.user ?? null
+      setUser(u); userRef.current = u
+      if (u) cargarPerfil(u.id)
       else { setPerfil(null); setLoading(false) }
     })
 
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const INACTIVITY_MS = 30 * 60 * 1000
+    let timer = null
+    const reset = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => { if (userRef.current) supabase.auth.signOut() }, INACTIVITY_MS)
+    }
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }))
+    reset()
+    return () => {
+      if (timer) clearTimeout(timer)
+      events.forEach(e => window.removeEventListener(e, reset))
+    }
   }, [])
 
   async function cargarPerfil(uid) {

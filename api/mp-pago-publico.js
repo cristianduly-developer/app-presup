@@ -1,14 +1,41 @@
+import { createClient } from '@supabase/supabase-js'
+
 const SAAS_URL = process.env.SAAS_ADMIN_URL || 'https://saas.solucionesmdp.com.ar'
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  const origin = req.headers['origin'] || ''
+  const allowed = process.env.APP_ORIGIN || 'https://app-presup.vercel.app'
+  if (origin === allowed || origin.endsWith('.vercel.app')) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'content-type')
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' })
 
-  const { org_id, plan } = req.body || {}
-  if (!org_id || !plan) return res.status(400).json({ error: 'org_id y plan requeridos' })
+  const token = (req.headers['authorization'] || '').replace('Bearer ', '').trim()
+  if (!token) return res.status(401).json({ error: 'No autorizado' })
+
+  const supabaseApp = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.VITE_SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  )
+  const { data: { user }, error: authErr } = await supabaseApp.auth.getUser()
+  if (authErr || !user?.email) return res.status(401).json({ error: 'No autorizado' })
+
+  const { plan } = req.body || {}
+  if (!plan) return res.status(400).json({ error: 'plan requerido' })
+
+  const central = createClient(process.env.CENTRAL_URL, process.env.CENTRAL_SERVICE_KEY)
+  const { data: emp } = await central
+    .from('empleados_organizacion')
+    .select('org_id')
+    .eq('email', user.email.toLowerCase())
+    .limit(1)
+    .maybeSingle()
+  const org_id = emp?.org_id
+  if (!org_id) return res.status(404).json({ error: 'No se encontró tu organización.' })
 
   try {
     const r = await fetch(`${SAAS_URL}/api/mp-crear-suscripcion`, {

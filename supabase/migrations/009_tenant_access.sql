@@ -13,7 +13,7 @@ ALTER TABLE tenant_access ENABLE ROW LEVEL SECURITY;
 
 CREATE OR REPLACE FUNCTION tiene_acceso() RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT COALESCE((SELECT valid_until > now() FROM tenant_access WHERE tenant_id = auth.uid()), TRUE);
+  SELECT COALESCE((SELECT valid_until > now() FROM tenant_access WHERE tenant_id = auth.uid()), FALSE);
 $$;
 
 -- ══════════════════════════════════════════════════════════════
